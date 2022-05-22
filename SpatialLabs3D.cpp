@@ -7,6 +7,8 @@
 
 #include "SpatialLabs3D.h"
 
+#include <d3d11_1.h>
+
 #pragma optimize("", off)
 
 // Not used
@@ -105,45 +107,40 @@ namespace SpatialLabs3D
 			_lens_enabled = false;
 		}
 	}
-	//-------------------------------------------------------------------------
+} // namespace SpatialLabs3D
 
-	void StartSRWeaver(SpatialLabs3D::WeavingInfo info)
-	{
-		SpatialLabs3D::SRWeaver::Instance().Start(info);
-	}
-	//---------------------------------------------------------------------
+//-------------------------------------------------------------------------
 
-	void StopSRWeaver()
-	{
-		SpatialLabs3D::SRWeaver::Instance().Stop();
-	}
-	//---------------------------------------------------------------------
+void StartSRWeaver(SpatialLabs3D::WeavingInfo info)
+{
+    SpatialLabs3D::SRWeaver::Instance().Start(info);
+}
 
-	void GetRTV(ID3D11RenderTargetView** render_target)
-	{
-		SpatialLabs3D::SRWeaver::Instance().GetRenderTarget(render_target);
-	}
-	//---------------------------------------------------------------------
+void StopSRWeaver()
+{
+    SpatialLabs3D::SRWeaver::Instance().Stop();
+}
 
-	void Render()
-	{
-		SpatialLabs3D::SRWeaver::Instance().Render();
-	}
-	//---------------------------------------------------------------------
+void GetRTV(ID3D11RenderTargetView** render_target)
+{
+    SpatialLabs3D::SRWeaver::Instance().GetRenderTarget(render_target);
+}
 
-	// Not sure where to use this at the moment
-	void EnableLenses()
-	{
-		SpatialLabs3D::SRWeaver::Instance().EnableLenses();
-	}
-	//---------------------------------------------------------------------
+void Render()
+{
+    SpatialLabs3D::SRWeaver::Instance().Render();
+}
 
-	// Not sure where to use this at the moment
-	void DisableLenses()
-	{
-		SpatialLabs3D::SRWeaver::Instance().DisableLenses();
-	}
-	//---------------------------------------------------------------------
+// Not sure where to use this at the moment
+void EnableLenses()
+{
+    SpatialLabs3D::SRWeaver::Instance().EnableLenses();
+}
+
+// Not sure where to use this at the moment
+void DisableLenses()
+{
+    SpatialLabs3D::SRWeaver::Instance().DisableLenses();
 }
 
 #endif

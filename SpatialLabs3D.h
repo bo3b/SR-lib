@@ -5,17 +5,13 @@
 // Helifax (Octavian Vasilovici) Dec. 2021
 //***************************************************************************
 
-// Spatial Labs
-#include "sr/weaver/dxweaver.h"
-#include "sr/sense/display/switchablehint.h"
 #include "DataTypes.h"
 
-// Some forward declares
-namespace SR
-{
-	class SRContext;
-	class PredictingDX11Weaver;
-}  // namespace SR
+#include "sr/sense/display/switchablehint.h"
+#include "sr/weaver/dxweaver.h"
+
+#include <cstdint>
+#include <d3d11_1.h>
 
 namespace SpatialLabs3D
 {
@@ -51,24 +47,17 @@ namespace SpatialLabs3D
 
 		bool _lens_enabled = true;
 	};
-	//-------------------------------------------------------------------------
-
-	void StartSRWeaver(SpatialLabs3D::WeavingInfo info);
-	//---------------------------------------------------------------------
-
-	void StopSRWeaver();
-	//---------------------------------------------------------------------
-
-	void GetRTV(ID3D11RenderTargetView** render_target);
-	//---------------------------------------------------------------------
-
-	void Render();
-	//---------------------------------------------------------------------
-
-	void EnableLenses();
-	//---------------------------------------------------------------------
-
-	void DisableLenses();
-	//---------------------------------------------------------------------
-
 }  // namespace SpatialLabs3D
+
+//-------------------------------------------------------------------------
+
+// Interface routines for the SpatialLabs3D.dll that are exported directly, and
+// called via LoadLibrary/GetProcAddress from d3d11.dll. We also make them
+// all __cdecl so that we don't get munged names.
+
+__declspec(dllexport) void __cdecl StartSRWeaver(SpatialLabs3D::WeavingInfo info);
+__declspec(dllexport) void __cdecl StopSRWeaver();
+__declspec(dllexport) void __cdecl GetRTV(ID3D11RenderTargetView** render_target);
+__declspec(dllexport) void __cdecl Render();
+__declspec(dllexport) void __cdecl EnableLenses();
+__declspec(dllexport) void __cdecl DisableLenses();

@@ -149,6 +149,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile />
+      <AdditionalIncludeDirectories>$(SolutionDir)SR-SDK-1.19\include;$(SolutionDir)SR-SDK-1.19\third_party\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -156,6 +157,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalLibraryDirectories>$(SolutionDir)SR-SDK-1.19\lib;$(SolutionDir)SR-SDK-1.19\third_party\OpenCV\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SimulatedRealityDisplays.lib;SimulatedRealityCore.lib;SimulatedRealityDirectX.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
