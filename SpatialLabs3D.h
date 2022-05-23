@@ -53,11 +53,11 @@ namespace SpatialLabs3D
 
 // Interface routines for the SpatialLabs3D.dll that are exported directly, and
 // called via LoadLibrary/GetProcAddress from d3d11.dll. We also make them
-// all __cdecl so that we don't get munged names.
+// all extern "C" so that we get simple names.
 
-extern "C" __declspec(dllexport) void __cdecl StartSRWeaver(SpatialLabs3D::WeavingInfo info);
-extern "C" __declspec(dllexport) void __cdecl StopSRWeaver();
-extern "C" __declspec(dllexport) void __cdecl GetRTV(ID3D11RenderTargetView** render_target);
-extern "C" __declspec(dllexport) void __cdecl Render();
-extern "C" __declspec(dllexport) void __cdecl EnableLenses();
-extern "C" __declspec(dllexport) void __cdecl DisableLenses();
+extern "C" __declspec(dllexport) void StartSRWeaver(SpatialLabs3D::WeavingInfo info);
+extern "C" __declspec(dllexport) void StopSRWeaver();
+extern "C" __declspec(dllexport) void GetRTV(ID3D11RenderTargetView** render_target);
+extern "C" __declspec(dllexport) void Render();
+extern "C" __declspec(dllexport) void EnableLenses();
+extern "C" __declspec(dllexport) void DisableLenses();

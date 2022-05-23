@@ -21,6 +21,6 @@ namespace SpatialLabs3D
 
 }  // namespace SpatialLabs3D
 
-typedef void (__cdecl *fnStartSRWeaver)(SpatialLabs3D::WeavingInfo info);
-typedef void (__cdecl *fnGetRTV)(ID3D11RenderTargetView** render_target);
-typedef void (__cdecl *fnRender)();
+typedef void (*fnStartSRWeaver)(SpatialLabs3D::WeavingInfo info);
+typedef void (*fnGetRTV)(ID3D11RenderTargetView** render_target);
+typedef void (*fnRender)();
