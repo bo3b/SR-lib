@@ -1,7 +1,7 @@
 #pragma once
 
+#include <cstdint>
 #include <d3d11.h>
-#include <stdint.h>
 
 namespace SpatialLabs3D
 {
@@ -18,7 +18,9 @@ namespace SpatialLabs3D
         ID3D11Device* _device{};
         ID3D11DeviceContext* _deviceContext{};
     };
-    //-------------------------------------------------------------------------
 
-    //-------------------------------------------------------------------------
 }  // namespace SpatialLabs3D
+
+typedef void (__cdecl *fnStartSRWeaver)(SpatialLabs3D::WeavingInfo info);
+typedef void (__cdecl *fnGetRTV)(ID3D11RenderTargetView** render_target);
+typedef void (__cdecl *fnRender)();

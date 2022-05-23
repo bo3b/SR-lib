@@ -55,9 +55,9 @@ namespace SpatialLabs3D
 // called via LoadLibrary/GetProcAddress from d3d11.dll. We also make them
 // all __cdecl so that we don't get munged names.
 
-__declspec(dllexport) void __cdecl StartSRWeaver(SpatialLabs3D::WeavingInfo info);
-__declspec(dllexport) void __cdecl StopSRWeaver();
-__declspec(dllexport) void __cdecl GetRTV(ID3D11RenderTargetView** render_target);
-__declspec(dllexport) void __cdecl Render();
-__declspec(dllexport) void __cdecl EnableLenses();
-__declspec(dllexport) void __cdecl DisableLenses();
+extern "C" __declspec(dllexport) void __cdecl StartSRWeaver(SpatialLabs3D::WeavingInfo info);
+extern "C" __declspec(dllexport) void __cdecl StopSRWeaver();
+extern "C" __declspec(dllexport) void __cdecl GetRTV(ID3D11RenderTargetView** render_target);
+extern "C" __declspec(dllexport) void __cdecl Render();
+extern "C" __declspec(dllexport) void __cdecl EnableLenses();
+extern "C" __declspec(dllexport) void __cdecl DisableLenses();
