@@ -58,11 +58,13 @@ namespace SpatialLabs3D
 		// Make a RTV that supports FULL SBS images!
 		_render_width = info._render_width;
 		_render_height = info._render_height;
-		_weaver = new SR::PredictingDX11Weaver(*_context, info._device, info._deviceContext, info._render_width * 2, info._render_height);
+		_weaver = new SR::PredictingDX11Weaver(*_context, info._device, info._deviceContext, info._render_width * 2, info._render_height, info._window);
+
 		//*A low latency app would have 1 framebuffer latency, so 16666 microseconds(the generated frame will be presented at next v - sync)
 		_weaver->setLatency(16666);
 		_context->initialize();
 	}
+
 	//-------------------------------------------------------------------------
 
 	void SRWeaver::Stop()

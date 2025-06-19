@@ -5,7 +5,7 @@
 
 namespace SpatialLabs3D
 {
-    constexpr uint16_t LATEST_VERSION = 2;
+    constexpr uint16_t LATEST_VERSION = 3;  
     struct WeavingInfo
     {
         // Identify the structure version.
@@ -15,8 +15,10 @@ namespace SpatialLabs3D
         uint16_t _render_width{};
         uint16_t _render_height{};
 
-        ID3D11Device* _device{};
-        ID3D11DeviceContext* _deviceContext{};
+        // Needs HWND for non-deprecated constructor in 1.33.1
+        HWND                 _window {};
+        ID3D11Device*        _device {};
+        ID3D11DeviceContext* _deviceContext {};
     };
 
 }  // namespace SpatialLabs3D
