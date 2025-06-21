@@ -3,8 +3,6 @@
 // Helifax (Octavian Vasilovici) Dec. 2021
 //***************************************************************************
 
-#ifdef _WIN64
-
 #include "SpatialLabs3D.h"
 
 #include <d3d11_1.h>
@@ -144,5 +142,3 @@ void DisableLenses()
 {
     SpatialLabs3D::SRWeaver::Instance().DisableLenses();
 }
-
-#endif
