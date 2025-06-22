@@ -143,13 +143,13 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile />
-      <AdditionalIncludeDirectories>$(SolutionDir)SR-SDK-1.33.1\x64\include;$(SolutionDir)SR-SDK-1.33.1\x64\third_party\OpenCV\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\include;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(SolutionDir)SR-SDK-1.33.1\x64\lib;$(SolutionDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\lib;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64</AdditionalLibraryDirectories>
       <AdditionalDependencies>SimulatedRealityDisplays.lib;SimulatedRealityCore.lib;SimulatedRealityDirectX.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -163,13 +163,13 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)SR-SDK-1.33.1\x32\include;$(SolutionDir)SR-SDK-1.33.1\x32\third_party\OpenCV\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\include;$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(SolutionDir)SR-SDK-1.33.1\x32\lib;$(SolutionDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\lib;$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86</AdditionalLibraryDirectories>
       <AdditionalDependencies>SimulatedRealityDisplays32.lib;SimulatedRealityCore32.lib;SimulatedRealityDirectX32.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -184,7 +184,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile />
-      <AdditionalIncludeDirectories>$(SolutionDir)SR-SDK-1.33.1\x64\include;$(SolutionDir)SR-SDK-1.33.1\x64\third_party\OpenCV\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\include;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -192,7 +192,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(SolutionDir)SR-SDK-1.33.1\x64\lib;$(SolutionDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\lib;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64</AdditionalLibraryDirectories>
       <AdditionalDependencies>SimulatedRealityDisplays.lib;SimulatedRealityCore.lib;SimulatedRealityDirectX.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -208,7 +208,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)SR-SDK-1.33.1\x32\include;$(SolutionDir)SR-SDK-1.33.1\x32\third_party\OpenCV\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\include;$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -216,7 +216,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(SolutionDir)SR-SDK-1.33.1\x32\lib;$(SolutionDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\lib;$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86</AdditionalLibraryDirectories>
       <AdditionalDependencies>SimulatedRealityDisplays32.lib;SimulatedRealityCore32.lib;SimulatedRealityDirectX32.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -232,7 +232,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)SR-SDK-1.33.1\x64\include;$(SolutionDir)SR-SDK-1.33.1\x64\third_party\OpenCV\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\include;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -240,7 +240,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(SolutionDir)SR-SDK-1.33.1\x64\lib;$(SolutionDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\lib;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64</AdditionalLibraryDirectories>
       <AdditionalDependencies>SimulatedRealityDisplays.lib;SimulatedRealityCore.lib;SimulatedRealityDirectX.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -256,7 +256,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)SR-SDK-1.33.1\x32\include;$(SolutionDir)SR-SDK-1.33.1\x32\third_party\OpenCV\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\include;$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -264,7 +264,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(SolutionDir)SR-SDK-1.33.1\x32\lib;$(SolutionDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\lib;$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86</AdditionalLibraryDirectories>
       <AdditionalDependencies>SimulatedRealityDisplays32.lib;SimulatedRealityCore32.lib;SimulatedRealityDirectX32.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
