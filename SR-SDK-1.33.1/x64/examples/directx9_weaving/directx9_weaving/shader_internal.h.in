@@ -1,0 +1,11 @@
+/*!
+ * Copyright (C) 2025 Leia, Inc.
+ */
+
+#ifndef SHADER_INTERNAL_H
+#define SHADER_INTERNAL_H
+
+const unsigned char ShaderBlobVS[] = {@VERTEXSHADER@};
+const unsigned char ShaderBlobPS[] = {@FRAGMENTSHADER@};
+
+#endif
