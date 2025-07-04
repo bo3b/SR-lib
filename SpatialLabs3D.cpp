@@ -7,7 +7,7 @@
 
 #include <d3d11_1.h>
 
-#pragma optimize("", off)
+//#pragma optimize("", off)
 
 // Not used
 //#include "sr/types.h"
@@ -25,32 +25,58 @@
 //#pragma comment(lib, "third_party/GLog/lib/glog.lib")
 //#pragma comment(lib, "third_party/Leap/lib/LeapC.lib")
 
-// Only link against libs that are used.
-// moved to project settings. SDK is x64 only 
-//#pragma comment(lib, "lib/SimulatedRealityDirectX.lib").
+// Only link against libs that are used.  The SDK is x32 and x64 now.
+// These are for reference only here, we want to avoid having to
+// include the corresponding dlls for these stub libraries, and
+// thus need to GetProcAddress at runtime- and only when
+//  direct_mode = spatial_labs
+//#pragma comment(lib, "lib/SimulatedRealityDirectX.lib")
 //#pragma comment(lib, "lib/SimulatedReality.lib")
 //#pragma comment(lib, "lib/SimulatedRealityCore.lib")
 //#pragma comment(lib, "lib/SimulatedRealityDisplays.lib")
 //#pragma comment(lib, "third_party/OpenCV/lib/opencv_world343.lib")
 
+// 7-2-25
+// Now moving the delay load of the DLLs here, and removed from the main
+// geo-11 code in HackerDXGI during setup.  We want to be able to ship geo-11
+// without any dangling dlls like the prior SpatialLabs3D.dll, but still
+// allow people to use direct_mode = simulated_reality if they have the
+// hardware and installed SR dlls.
+// That means making this a static lib that is included with geo-11, but
+// in here we do the LoadLibrary of the SR dlls needed.
+
+
+// Any failures are considered fatal, so instead of doing any handling,
+// we'll throw up MessageBox to let the user know. The user specified to
+// use simulated_reality hardware, but it does not exist. There is no
+// logical fallback, so let's just let them know.
+void FatalBox(std::wstring error, std::wstring title)
+{
+	::MessageBoxW(nullptr, error.c_str(), title.c_str(), MB_OK);
+	::ExitProcess(-1);
+}
+
 namespace SpatialLabs3D
 {
-	void SRWeaver::Start(WeavingInfo& info)
+	void SRWeaver::Start(const WeavingInfo& info)
 	{
 		if (info._version != LATEST_VERSION)
-		{
-			::MessageBoxW(nullptr, L"It looks like you are trying to use a version of Vk3Dvision\nthat is not compatible with this SpatialLabs3D module!", L"Incompatibility Detected!", MB_OK);
-			::ExitProcess(-1);
-		}
+			FatalBox(L"It looks like you are trying to use a version of Vk3Dvision\nthat is not compatible with this SpatialLabs3D module!", L"Incompatibility Detected!");
 
 		if (!_context)
 		{
-			_context = new SR::SRContext();
-			_lensHint = SR::SwitchableLensHint::create(*_context);
-			_context->initialize();
-		}
+			// Let's double check we are able find the DLLs we need for simulated reality,
+			// so we can give a good error if not.
+			HMODULE srCore_dll = LoadLibrary(L"SimulatedRealityCore32.dll");
+			if (srCore_dll == nullptr)
+				FatalBox(L"Simulated Reality DLLs are not available on your system.\nUnable to use direct_mode=simulated_reality.", L"Missing SR runtime DLLs");
 
-		if (_weaver)
+			_context = new SR::SRContext();
+			if (_context == nullptr)
+				FatalBox(L"Failed to create SRContext for simulated_reality.", L"Missing SR runtime DLLs");
+		}
+		
+		if (_weaver != nullptr)
 			delete _weaver;
 
 		// Make a RTV that supports FULL SBS images!
@@ -58,8 +84,9 @@ namespace SpatialLabs3D
 		_render_height = info._render_height;
 		_weaver = new SR::PredictingDX11Weaver(*_context, info._device, info._deviceContext, info._render_width * 2, info._render_height, info._window);
 
-		//*A low latency app would have 1 framebuffer latency, so 16666 microseconds(the generated frame will be presented at next v - sync)
-		_weaver->setLatency(16666);
+		// We are required to pass HWND now, so let it figure out latency.
+		_weaver->setLatencyInFrames(1);
+
 		_context->initialize();
 	}
 
@@ -71,7 +98,7 @@ namespace SpatialLabs3D
 			delete _weaver;
 
 		if (_context)
-			delete _context;
+			delete _context; // Will call destructor
 	}
 	//-------------------------------------------------------------------------
 

@@ -23,7 +23,7 @@ namespace SpatialLabs3D
 			static SRWeaver theInstance;
 			return theInstance;
 		}
-		~SRWeaver() {};
+		~SRWeaver() = default;
 
 		void Start(WeavingInfo& info);
 		void Stop();
