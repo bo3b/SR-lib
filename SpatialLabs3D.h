@@ -29,8 +29,6 @@ namespace SpatialLabs3D
 		void Stop();
 		void GetRenderTarget(ID3D11RenderTargetView** render_target);
 		void Render();
-		void EnableLenses();
-		void DisableLenses();
 
 	private:
 		SRWeaver() {};
@@ -39,13 +37,10 @@ namespace SpatialLabs3D
 		SRWeaver& operator=(const SRWeaver&);
 
 		SR::SRContext* _context = nullptr;
-		SR::SwitchableLensHint* _lensHint = nullptr;
 		SR::PredictingDX11Weaver* _weaver = nullptr;
 
 		uint32_t _render_width{};
 		uint32_t _render_height{};
-
-		bool _lens_enabled = true;
 	};
 }  // namespace SpatialLabs3D
 
@@ -59,5 +54,3 @@ extern "C" __declspec(dllexport) void StartSRWeaver(SpatialLabs3D::WeavingInfo i
 extern "C" __declspec(dllexport) void StopSRWeaver();
 extern "C" __declspec(dllexport) void GetRTV(ID3D11RenderTargetView** render_target);
 extern "C" __declspec(dllexport) void Render();
-extern "C" __declspec(dllexport) void EnableLenses();
-extern "C" __declspec(dllexport) void DisableLenses();

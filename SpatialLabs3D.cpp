@@ -86,27 +86,7 @@ namespace SpatialLabs3D
 	{
 		*render_target = _weaver->getFrameBuffer();
 	}
-	//-------------------------------------------------------------------------
 
-	void SRWeaver::EnableLenses()
-	{
-		//lensHint->isEnabled() -> Excessive calls to this function will completely kill perf! Instead use our own variable!
-		if (!_lens_enabled)
-		{
-			_lensHint->enable();
-			_lens_enabled = true;
-		}
-	}
-	//-------------------------------------------------------------------------
-
-	void SRWeaver::DisableLenses()
-	{
-		if (_lens_enabled)
-		{
-			_lensHint->disable();  //Allow the lens to be disabled if the system decides this is desirable
-			_lens_enabled = false;
-		}
-	}
 } // namespace SpatialLabs3D
 
 //-------------------------------------------------------------------------
@@ -128,17 +108,5 @@ void GetRTV(ID3D11RenderTargetView** render_target)
 
 void Render()
 {
-    SpatialLabs3D::SRWeaver::Instance().Render();
-}
-
-// Not sure where to use this at the moment
-void EnableLenses()
-{
-    SpatialLabs3D::SRWeaver::Instance().EnableLenses();
-}
-
-// Not sure where to use this at the moment
-void DisableLenses()
-{
-    SpatialLabs3D::SRWeaver::Instance().DisableLenses();
+	SpatialLabs3D::SRWeaver::Instance().Render();
 }
