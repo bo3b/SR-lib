@@ -23,7 +23,11 @@ namespace SpatialLabs3D
 
 }  // namespace SpatialLabs3D
 
-typedef void (*fnStartSRWeaver)(SpatialLabs3D::WeavingInfo info);
-typedef void (*fnStopSRWeaver)();
-typedef void (*fnGetRTV)(ID3D11RenderTargetView** render_target);
-typedef void (*fnRender)();
+// Interface routines for the SpatialLabs3D.dll that are exported directly, and
+// called via LoadLibrary/GetProcAddress from d3d11.dll. We also make them
+// all extern "C" so that we get simple names.
+
+extern "C" void StartSRWeaver(SpatialLabs3D::WeavingInfo info);
+extern "C" void StopSRWeaver();
+extern "C" void GetRTV(ID3D11RenderTargetView* *render_target);
+extern "C" void Render();

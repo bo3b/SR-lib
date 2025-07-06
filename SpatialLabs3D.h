@@ -25,7 +25,7 @@ namespace SpatialLabs3D
 		}
 		~SRWeaver() = default;
 
-		void Start(WeavingInfo& info);
+		void Start(const WeavingInfo& info);
 		void Stop();
 		void GetRenderTarget(ID3D11RenderTargetView** render_target);
 		void Render();
@@ -45,12 +45,3 @@ namespace SpatialLabs3D
 }  // namespace SpatialLabs3D
 
 //-------------------------------------------------------------------------
-
-// Interface routines for the SpatialLabs3D.dll that are exported directly, and
-// called via LoadLibrary/GetProcAddress from d3d11.dll. We also make them
-// all extern "C" so that we get simple names.
-
-extern "C" __declspec(dllexport) void StartSRWeaver(SpatialLabs3D::WeavingInfo info);
-extern "C" __declspec(dllexport) void StopSRWeaver();
-extern "C" __declspec(dllexport) void GetRTV(ID3D11RenderTargetView** render_target);
-extern "C" __declspec(dllexport) void Render();

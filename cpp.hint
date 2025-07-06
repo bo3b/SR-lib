@@ -1,2 +1,0 @@
-#define SPATIALLABS3D_API __declspec(dllexport)
-#define SPATIALLABS3D_API __declspec(dllimport)
