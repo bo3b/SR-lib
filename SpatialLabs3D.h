@@ -5,7 +5,7 @@
 // Helifax (Octavian Vasilovici) Dec. 2021
 //***************************************************************************
 
-#include "DataTypes.h"
+#include "SR.h"
 
 #include "sr/sense/display/switchablehint.h"
 #include "sr/weaver/dxweaver.h"

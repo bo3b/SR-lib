@@ -288,7 +288,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="DataTypes.h" />
+    <ClInclude Include="SR.h" />
     <ClInclude Include="RenderToTex.h" />
     <ClInclude Include="SpatialLabs3D.h" />
   </ItemGroup>

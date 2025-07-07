@@ -21,7 +21,7 @@
     <ClInclude Include="RenderToTex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DataTypes.h">
+    <ClInclude Include="SR.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
