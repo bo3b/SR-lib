@@ -1,0 +1,78 @@
+# We want to create a new Release whenever we Tag a given commit/build.
+# Typically this will be for a given CI build that we've tested as working.
+#
+# Expected workflow is to test a manual build, and if it's
+# working, tag it for release. This yml will auto-build and release that Tag.
+
+name: Release upon Tag
+
+# Watch for Tags and run when we see a new one pushed.
+# The release branch must be the default branch for this to trigger.
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  tagged_release:
+    name: Create Release
+    runs-on: windows-2019
+
+    permissions:
+      contents: write
+      actions: read
+
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Install 7-Zip
+        shell: cmd
+        run: |
+          choco install 7zip -y
+
+# Build via Publish.bat, but tell the script to skip version bump.
+
+      - name: Build into Zip Release
+        shell: cmd
+        run: |
+          CALL "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
+          echo(
+          echo === Building Win32 target ===
+          MSBUILD StereoVisionHacks.sln /p:Configuration="Debug" /p:Platform=Win32 /v:minimal /target:rebuild
+          MSBUILD StereoVisionHacks.sln /p:Configuration="Release" /p:Platform=Win32 /v:minimal /target:rebuild
+          echo(
+          echo === Building x64 target ===
+          MSBUILD StereoVisionHacks.sln /p:Configuration="Debug" /p:Platform=x64 /v:minimal /target:rebuild
+          MSBUILD StereoVisionHacks.sln /p:Configuration="Release" /p:Platform=x64 /v:minimal /target:rebuild
+          
+      - name: Get tag name
+        shell: bash
+        run: |
+          echo "TAG_NUM=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: Compress release to .7z
+        shell: bash
+        run: |
+          cd "SR-lib"
+          7z a -t7z "SR-lib_v${TAG_NUM}.7z" "./*"
+      
+      - name: List contents of .7z file for log info
+        shell: bash
+        run: |
+          7z l "SR-lib/SR-lib_v${TAG_NUM}.7z"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG_NUM }}
+          name: Release build for v${{ env.TAG_NUM }} (x32, x64)
+          files: "SR-lib/SR-lib_v${{ env.TAG_NUM }}.7z"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
