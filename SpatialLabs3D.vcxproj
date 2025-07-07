@@ -73,25 +73,25 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>SR</TargetName>
-    <OutDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</OutDir>
+    <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <TargetName>SR</TargetName>
-    <OutDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</OutDir>
+    <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>SR</TargetName>
-    <OutDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</OutDir>
+    <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>SR</TargetName>
-    <OutDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</OutDir>
+    <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -115,6 +115,9 @@
     <Lib>
       <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityCore.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityDirectX.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64\opencv_world343.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
+    <PostBuildEvent>
+      <Command>xcopy /F /Y SR.h SR-lib\include\</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -138,6 +141,9 @@
     <Lib>
       <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityCore32.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityDirectX32.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86\opencv_world343.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
+    <PostBuildEvent>
+      <Command>xcopy /F /Y SR.h SR-lib\include\</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -164,6 +170,9 @@
     <Lib>
       <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityCore.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityDirectX.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64\opencv_world343.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
+    <PostBuildEvent>
+      <Command>xcopy /F /Y SR.h SR-lib\include\</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -192,6 +201,9 @@
     <Lib>
       <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityCore32.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityDirectX32.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86\opencv_world343.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
+    <PostBuildEvent>
+      <Command>xcopy /F /Y SR.h SR-lib\include\</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="SR.h" />
