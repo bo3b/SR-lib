@@ -29,12 +29,13 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
-      - name: Install v141 toolset
+      - name: Add v141 toolset
+        shell: pwsh
         run: |
-          "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify `
+          & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe" modify `
             --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" `
-            --add Microsoft.VisualStudio.Component.VC.Tools.141 `
-            --quiet --norestart --wait
+            --add Microsoft.VisualStudio.Component.VC.Tools.14.1x `
+            --quiet --wait --norestart
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v2
