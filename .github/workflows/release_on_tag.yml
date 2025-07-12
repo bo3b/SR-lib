@@ -73,12 +73,12 @@ jobs:
         run: |
           echo(
           echo === Building Win32 target ===
-          MSBUILD StereoVisionHacks.sln /p:Configuration="Debug" /p:Platform=Win32 /v:minimal /target:rebuild /p:PlatformToolset=v141
-          MSBUILD StereoVisionHacks.sln /p:Configuration="Release" /p:Platform=Win32 /v:minimal /target:rebuild /p:PlatformToolset=v141
+          MSBUILD SR-lib.sln /p:Configuration="Debug" /p:Platform=Win32 /v:minimal /target:rebuild /p:PlatformToolset=v141
+          MSBUILD SR-lib.sln /p:Configuration="Release" /p:Platform=Win32 /v:minimal /target:rebuild /p:PlatformToolset=v141
           echo(
           echo === Building x64 target ===
-          MSBUILD StereoVisionHacks.sln /p:Configuration="Debug" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v141
-          MSBUILD StereoVisionHacks.sln /p:Configuration="Release" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v141
+          MSBUILD SR-lib.sln /p:Configuration="Debug" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v141
+          MSBUILD SR-lib.sln /p:Configuration="Release" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v141
           
       - name: Get tag name
         shell: bash
