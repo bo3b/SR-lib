@@ -30,10 +30,12 @@ jobs:
           ref: ${{ github.ref }}
         
       - name: Show all Visual Studio installs
+        shell: cmd
         run: |
           "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -all
           
       - name: Install v141 toolset
+        shell: cmd
         run: |
           "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify \
           --installPath "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise" \
