@@ -104,6 +104,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile />
       <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\include;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -130,6 +131,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\include;$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -157,6 +159,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile />
       <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\include;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\include</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
