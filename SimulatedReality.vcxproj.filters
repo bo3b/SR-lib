@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SpatialLabs3D.h">
+    <ClInclude Include="SimulatedReality.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RenderToTex.h">
@@ -26,7 +26,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SpatialLabs3D.cpp">
+    <ClCompile Include="SimulatedReality.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RenderToTex.cpp">

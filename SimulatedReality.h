@@ -1,8 +1,9 @@
 #pragma once
 
 //***************************************************************************
-// SpatialLabs3D integration for 3DMigoto
+// SimulatedReality integration for 3DMigoto
 // Helifax (Octavian Vasilovici) Dec. 2021
+// Bo3b: Updated July 2025
 //***************************************************************************
 
 #include "SR.h"
@@ -13,7 +14,7 @@
 #include <cstdint>
 #include <d3d11_1.h>
 
-namespace SpatialLabs3D
+namespace SimulatedReality
 {
 	class SRWeaver
 	{
@@ -42,6 +43,6 @@ namespace SpatialLabs3D
 		uint32_t _render_width{};
 		uint32_t _render_height{};
 	};
-}  // namespace SpatialLabs3D
+}  // namespace SimulatedReality
 
 //-------------------------------------------------------------------------

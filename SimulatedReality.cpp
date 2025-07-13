@@ -1,9 +1,10 @@
 //***************************************************************************
-// SpatialLabs3D integration for 3DMigoto
+// SimulatedReality integration for 3DMigoto
 // Helifax (Octavian Vasilovici) Dec. 2021
+// Bo3b: Updated July 2025
 //***************************************************************************
 
-#include "SpatialLabs3D.h"
+#include "SimulatedReality.h"
 
 #include <d3d11_1.h>
 
@@ -56,12 +57,12 @@ void FatalBox(std::wstring error, std::wstring title)
 	::ExitProcess(-1);
 }
 
-namespace SpatialLabs3D
+namespace SimulatedReality
 {
 	void SRWeaver::Start(const WeavingInfo& info)
 	{
 		if (info._version != LATEST_VERSION)
-			FatalBox(L"It looks like you are trying to use a version of Vk3Dvision\nthat is not compatible with this SpatialLabs3D module!", L"Incompatibility Detected!");
+			FatalBox(L"It looks like you are trying to use a version of geo-11\nthat is not compatible with this SimulatedReality module!", L"Incompatibility Detected!");
 
 		if (!_context)
 		{
@@ -119,26 +120,26 @@ namespace SpatialLabs3D
 		*render_target = _weaver->getFrameBuffer();
 	}
 
-} // namespace SpatialLabs3D
+} // namespace SimulatedReality
 
 //-------------------------------------------------------------------------
 
-void StartSRWeaver(SpatialLabs3D::WeavingInfo info)
+void StartSRWeaver(SimulatedReality::WeavingInfo info)
 {
-    SpatialLabs3D::SRWeaver::Instance().Start(info);
+    SimulatedReality::SRWeaver::Instance().Start(info);
 }
 
 void StopSRWeaver()
 {
-    SpatialLabs3D::SRWeaver::Instance().Stop();
+    SimulatedReality::SRWeaver::Instance().Stop();
 }
 
 void GetRTV(ID3D11RenderTargetView** render_target)
 {
-    SpatialLabs3D::SRWeaver::Instance().GetRenderTarget(render_target);
+    SimulatedReality::SRWeaver::Instance().GetRenderTarget(render_target);
 }
 
 void Render()
 {
-	SpatialLabs3D::SRWeaver::Instance().Render();
+	SimulatedReality::SRWeaver::Instance().Render();
 }
