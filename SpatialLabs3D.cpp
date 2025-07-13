@@ -67,7 +67,12 @@ namespace SpatialLabs3D
 		{
 			// Let's double check we are able find the DLLs we need for simulated reality,
 			// so we can give a good error if not.
-			HMODULE srCore_dll = LoadLibrary(L"SimulatedRealityCore32.dll");
+			HMODULE srCore_dll = nullptr;
+#ifdef _WIN64
+			 srCore_dll = LoadLibrary(L"SimulatedRealityCore.dll");
+#else
+			srCore_dll = LoadLibrary(L"SimulatedRealityCore32.dll");
+#endif
 			if (srCore_dll == nullptr)
 				FatalBox(L"Simulated Reality DLLs are not available on your system.\nUnable to use direct_mode=simulated_reality.", L"Missing SR runtime DLLs");
 
