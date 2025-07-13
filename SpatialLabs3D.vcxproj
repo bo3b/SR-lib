@@ -217,6 +217,9 @@
     <ClCompile Include="RenderToTex.cpp" />
     <ClCompile Include="SpatialLabs3D.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include=".github\workflows\release_on_tag.yml" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
