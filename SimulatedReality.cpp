@@ -27,15 +27,14 @@
 //#pragma comment(lib, "third_party/Leap/lib/LeapC.lib")
 
 // Only link against libs that are used.  The SDK is x32 and x64 now.
-// These are for reference only here, we want to avoid having to
-// include the corresponding dlls for these stub libraries, and
-// thus need to GetProcAddress at runtime- and only when
-//  direct_mode = spatial_labs
-//#pragma comment(lib, "lib/SimulatedRealityDirectX.lib")
-//#pragma comment(lib, "lib/SimulatedReality.lib")
-//#pragma comment(lib, "lib/SimulatedRealityCore.lib")
-//#pragma comment(lib, "lib/SimulatedRealityDisplays.lib")
-//#pragma comment(lib, "third_party/OpenCV/lib/opencv_world343.lib")
+// These are for reference only here, and were moved to librarian input.
+// They are now marked as DelayLoad, so that we don't have a hard DLL
+// requirement for these, and only loaded when:
+//  direct_mode = simulated_reality
+// We will get benign duplicate symbol warnings, but need these:
+//#pragma comment(lib, "SimulatedRealityCore.lib")
+//#pragma comment(lib, "SimulatedRealityDirectX.lib")
+//#pragma comment(lib, "opencv_world343.lib")
 
 // 7-2-25
 // Now moving the delay load of the DLLs here, and removed from the main
