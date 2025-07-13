@@ -115,7 +115,7 @@
       <AdditionalDependencies>SimulatedRealityDisplays.lib;SimulatedRealityCore.lib;SimulatedRealityDirectX.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
-      <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityCore.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityDirectX.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64\opencv_world343.lib";%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64\opencv_world343d.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityCore.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityDirectX.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <PostBuildEvent>
       <Command>xcopy /F /Y SR.h SR-lib\include\</Command>
@@ -142,7 +142,7 @@
       <AdditionalDependencies>SimulatedRealityDisplays32.lib;SimulatedRealityCore32.lib;SimulatedRealityDirectX32.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
-      <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityCore32.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityDirectX32.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86\opencv_world343.lib";%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86\opencv_world343d.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityCore32.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityDirectX32.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <PostBuildEvent>
       <Command>xcopy /F /Y SR.h SR-lib\include\</Command>
@@ -172,11 +172,12 @@
       <AdditionalDependencies>SimulatedRealityDisplays.lib;SimulatedRealityCore.lib;SimulatedRealityDirectX.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
-      <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityCore.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityDirectX.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64\opencv_world343.lib";%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64\opencv_world343.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityCore.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityDirectX.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <PostBuildEvent>
       <Command>xcopy /F /Y SR.h SR-lib\include\</Command>
     </PostBuildEvent>
+    <ProjectReference />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -203,7 +204,7 @@
       <AdditionalDependencies>SimulatedRealityDisplays32.lib;SimulatedRealityCore32.lib;SimulatedRealityDirectX32.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
-      <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityCore32.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityDirectX32.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86\opencv_world343.lib";%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86\opencv_world343.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityCore32.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityDirectX32.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <PostBuildEvent>
       <Command>xcopy /F /Y SR.h SR-lib\include\</Command>
