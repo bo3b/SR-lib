@@ -28,7 +28,7 @@ on:
 jobs:
   tagged_release:
     name: Create Release
-    runs-on: windows-2022
+    runs-on: windows-2025
 
     permissions:
       contents: write
@@ -52,19 +52,6 @@ jobs:
           echo === Installed toolsets ===
           dir "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC"
           dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC"
-          
-      - name: Install v141 toolset
-        shell: cmd
-        run: |
-          Start "" /Wait "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Enterprise" --add Microsoft.VisualStudio.Component.VC.v141.x86.x64 --norestart --quiet
-    
-        # Show toolset arrived.
-      - name: Show all Visual Studio installs
-        shell: cmd
-        run: |
-          echo === Installed toolsets ===
-          dir "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC"
-          dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC"
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v2
@@ -75,12 +62,12 @@ jobs:
         run: |
           echo(
           echo === Building Win32 target ===
-          MSBUILD SR-lib.sln /p:Configuration="Debug" /p:Platform=x32 /v:minimal /target:rebuild /p:PlatformToolset=v141
-          MSBUILD SR-lib.sln /p:Configuration="Release" /p:Platform=x32 /v:minimal /target:rebuild /p:PlatformToolset=v141
+          MSBUILD SR-lib.sln /p:Configuration="Debug" /p:Platform=x32 /v:minimal /target:rebuild /p:PlatformToolset=v143
+          MSBUILD SR-lib.sln /p:Configuration="Release" /p:Platform=x32 /v:minimal /target:rebuild /p:PlatformToolset=v143
           echo(
           echo === Building x64 target ===
-          MSBUILD SR-lib.sln /p:Configuration="Debug" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v141
-          MSBUILD SR-lib.sln /p:Configuration="Release" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v141
+          MSBUILD SR-lib.sln /p:Configuration="Debug" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v143
+          MSBUILD SR-lib.sln /p:Configuration="Release" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v143
           
       - name: Get tag name
         shell: bash
