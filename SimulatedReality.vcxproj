@@ -72,25 +72,21 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
     <TargetName>SR</TargetName>
     <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
     <TargetName>SR</TargetName>
     <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
     <TargetName>SR</TargetName>
     <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
     <TargetName>SR</TargetName>
     <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
@@ -106,14 +102,8 @@
       <PrecompiledHeaderFile />
       <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\include;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\lib;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SimulatedRealityDisplays.lib;SimulatedRealityCore.lib;SimulatedRealityDirectX.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
     <Lib>
       <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64\opencv_world343d.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityCore.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityDirectX.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
@@ -133,14 +123,8 @@
       </PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\include;$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\lib;$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SimulatedRealityDisplays32.lib;SimulatedRealityCore32.lib;SimulatedRealityDirectX32.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
     <Lib>
       <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86\opencv_world343d.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityCore32.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityDirectX32.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
@@ -162,15 +146,6 @@
       <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\include;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\lib;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SimulatedRealityDisplays.lib;SimulatedRealityCore.lib;SimulatedRealityDirectX.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
     <Lib>
       <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64\opencv_world343.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityCore.lib";"$(ProjectDir)SR-SDK-1.33.1\x64\lib\SimulatedRealityDirectX.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
@@ -194,15 +169,6 @@
       <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\include;$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
-    <Link>
-      <SubSystem>Windows</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableUAC>false</EnableUAC>
-      <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\lib;$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SimulatedRealityDisplays32.lib;SimulatedRealityCore32.lib;SimulatedRealityDirectX32.lib;opencv_world343.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
     <Lib>
       <AdditionalDependencies>"$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86\opencv_world343.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityCore32.lib";"$(ProjectDir)SR-SDK-1.33.1\x32\lib\SimulatedRealityDirectX32.lib";%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>

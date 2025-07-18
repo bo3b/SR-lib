@@ -72,7 +72,9 @@ jobs:
       - name: Get tag name
         shell: bash
         run: |
-          echo "TAG_NUM=${GITHUB_REF##*/}" >> $GITHUB_ENV
+          TAG_NUM="${GITHUB_REF##*/}"
+          echo "TAG_NUM=$TAG_NUM" >> $GITHUB_ENV
+          echo "Using Tag: $TAG_NUM"
 
       - name: Compress release to .7z
         shell: bash
