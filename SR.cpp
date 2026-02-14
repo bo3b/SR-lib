@@ -1,30 +1,41 @@
 #include "SR.h"
 
-#include "sr/sense/display/switchablehint.h"
-#include "sr/weaver/dxweaver.h"
+#include <d3d9.h>
+#include <d3d11_1.h>
+#include <string>
+
+#include "sr/management/srcontext.h"
 #include "sr/weaver/dx9weaver.h"
+#include "sr/weaver/dx11weaver.h"
 
 using SimulatedReality::SRInterfaceDX11;
 using SimulatedReality::SRInterfaceDX9;
 
+
+// Libraries used are set in Project Properties.  We specifically
+// do not use the Debug versions here because at an end-user
+// runtime, they will not be available.
+// 
+// Libraries:
+//  x32:
+//   opencv_world343.lib;
+//   SimulatedRealityCore32.lib;
+//   SimulatedRealityDirectX32.lib;
+//  x64:
+//   opencv_world343.lib;
+//   SimulatedRealityCore.lib;
+//   SimulatedRealityDirectX.lib;
+// 
+// Paths:
+//  x32:
+//   $(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86
+//   $(ProjectDir)SR-SDK-1.33.1\x32\lib
+//  x64
+//   $(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64
+//   $(ProjectDir)SR-SDK-1.33.1\x64\lib
+
 // Comments from earlier version.
 // 
-// Not used
-//#include "sr/types.h"
-//#include "sr/sense/core/inputstream.h"
-//#include "sr/sense/handtracker/handtracker.h"
-//#include "sr/sense/eyetracker/eyetracker.h"
-//#include "sr/world/display/screen.h"
-
-// Other libs not used!
-//#pragma comment(lib, "lib/SimulatedRealityCameras.lib")
-//#pragma comment(lib, "lib/SimulatedRealityHandTrackers.lib")
-//#pragma comment(lib, "lib/SimulatedRealityFaceTrackers.lib")
-//#pragma comment(lib, "lib/SimulatedRealityUserModelers.lib")
-//#pragma comment(lib, "lib/DimencoWeaving.lib")
-//#pragma comment(lib, "third_party/GLog/lib/glog.lib")
-//#pragma comment(lib, "third_party/Leap/lib/LeapC.lib")
-
 // Only link against libs that are used.  The SDK is x32 and x64 now.
 // These are for reference only here, and were moved to librarian input.
 // They are now marked as DelayLoad, so that we don't have a hard DLL
@@ -34,6 +45,7 @@ using SimulatedReality::SRInterfaceDX9;
 //#pragma comment(lib, "SimulatedRealityCore.lib")
 //#pragma comment(lib, "SimulatedRealityDirectX.lib")
 //#pragma comment(lib, "opencv_world343.lib")
+// Note- We never want to use #pragma comment for these, it's bad practice.
 
 // 7-2-25
 // Now moving the delay load of the DLLs here, and removed from the main
@@ -47,14 +59,14 @@ using SimulatedReality::SRInterfaceDX9;
 // 2-23-26
 // Completely revised to allow for DX9 support now too.  Should work for all
 // variants, DX9, DX11, x32, x64.
-// 
+//
 // Decided to completely revamp the interface, taking a different tack that is
 // not C++ like. The idea is to be more COM like, because that is ultimately
 // our API, and doing stuff the C++ 'way' adds conflicts that are not very
-// valuable.  
+// valuable.
 // This approach is now to have a factory Create routine, and the normal COM
 // style Release. This removes the invisible ctor and dtor side effects, and
-// feels more natural to use in DirectX world. 
+// feels more natural to use in DirectX world.
 
 #define SAFE_DELETE(p)  \
     {                   \
