@@ -15,21 +15,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SimulatedReality.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderToTex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SR.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SimulatedReality.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RenderToTex.cpp">
+    <ClCompile Include="SR.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

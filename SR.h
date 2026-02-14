@@ -1,33 +1,44 @@
 #pragma once
 
-#include <cstdint>
-#include <d3d11.h>
+#include <d3d9.h>
+#include <d3d11_1.h>
+
+// This provides a simple interface to any Simulated Reality hardware.
+//
+// Designed to follow the COM model of DX9 and DX11, as opposed to a 
+// more C++ object style. Follow these steps to use the interface:
+// 
+//  1) Call CreateSRInterfaceDX9() to create an SRInterfaceDX9 object.
+//     SRContext and Weaver will be initialized.
+//  2) Draw loop:
+//    1) Call GetSRRenderSurface() to get the SR Surface/RenderTarget.
+//    2) Draw or StretchRect() final output into that Surface/RenderTarget.
+//    3) Call PerformWeave() to have the stereo drawn to backbuffer.
+//    4) Call Present() to display stereo.
+//  3) On exit, call Release()
 
 namespace SimulatedReality
 {
-    constexpr uint16_t LATEST_VERSION = 3;  
-    struct WeavingInfo
-    {
-        // Identify the structure version.
-        const uint16_t _version = LATEST_VERSION;
 
-        // Resolution at which we do the weaving. Always 4K
-        uint16_t _render_width{};
-        uint16_t _render_height{};
+class SRInterfaceDX9
+{
+public:
+    void Release();
 
-        // Needs HWND for non-deprecated constructor in 1.33.1
-        HWND                 _window {};
-        ID3D11Device*        _device {};
-        ID3D11DeviceContext* _deviceContext {};
-    };
+    void GetSRRenderSurface(IDirect3DSurface9** renderTarget);
+    void PerformWeave();
+};
+extern "C" HRESULT CreateSRInterfaceDX9(IDirect3DDevice9* device, unsigned int width, unsigned int height, HWND window, SRInterfaceDX9** ppReturnedSRInterfaceDX9);
+
+
+class SRInterfaceDX11
+{
+public:
+    void Release();
+
+    void GetSRRenderSurface(ID3D11RenderTargetView** renderTarget);
+    void PerformWeave();
+};
+extern "C" HRESULT CreateSRInterfaceDX11(ID3D11Device1* device1, ID3D11DeviceContext1* context1, unsigned int width, unsigned int height, HWND window, SRInterfaceDX11** ppReturnedSRInterfaceDX11);
 
 }  // namespace SimulatedReality
-
-// Interface routines for the SR.lib that are exported directly, and
-// called via LoadLibrary/GetProcAddress from d3d11.dll. We also make them
-// all extern "C" so that we get simple names.
-
-extern "C" void StartSRWeaver(SimulatedReality::WeavingInfo info);
-extern "C" void StopSRWeaver();
-extern "C" void GetRTV(ID3D11RenderTargetView* *render_target);
-extern "C" void Render();

@@ -178,12 +178,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="SR.h" />
-    <ClInclude Include="RenderToTex.h" />
-    <ClInclude Include="SimulatedReality.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="RenderToTex.cpp" />
-    <ClCompile Include="SimulatedReality.cpp" />
+    <ClCompile Include="SR.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".github\workflows\release_on_tag.yml" />
