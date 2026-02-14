@@ -112,7 +112,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64;$(ProjectDir)SR-SDK-1.33.1\x64\lib</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /F /Y SR.h SR-lib\include\</Command>
+      <Command>xcopy /F /Y SR.hpp SR-lib\include\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -133,7 +133,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86;$(ProjectDir)SR-SDK-1.33.1\x32\lib</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /F /Y SR.h SR-lib\include\</Command>
+      <Command>xcopy /F /Y SR.hpp SR-lib\include\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -154,7 +154,7 @@
       <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64;$(ProjectDir)SR-SDK-1.33.1\x64\lib</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /F /Y SR.h SR-lib\include\</Command>
+      <Command>xcopy /F /Y SR.hpp SR-lib\include\</Command>
     </PostBuildEvent>
     <ProjectReference />
   </ItemDefinitionGroup>
@@ -177,11 +177,11 @@
       <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86;$(ProjectDir)SR-SDK-1.33.1\x32\lib</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /F /Y SR.h SR-lib\include\</Command>
+      <Command>xcopy /F /Y SR.hpp SR-lib\include\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="SR.h" />
+    <ClInclude Include="SR.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SR.cpp" />
