@@ -7,9 +7,11 @@
 #include "sr/management/srcontext.h"
 #include "sr/weaver/dx9weaver.h"
 #include "sr/weaver/dx11weaver.h"
+#include "sr/weaver/glweaver.h"
 
 using SimulatedReality::SRInterfaceDX11;
 using SimulatedReality::SRInterfaceDX9;
+using SimulatedReality::SRInterfaceOGL;
 
 
 // Libraries used are set in Project Properties.  We specifically
@@ -84,6 +86,7 @@ using SimulatedReality::SRInterfaceDX9;
 static SR::SRContext*            srContext_    = nullptr;
 static SR::PredictingDX9Weaver*  srWeaverDX9_  = nullptr;
 static SR::PredictingDX11Weaver* srWeaverDX11_ = nullptr;
+static SR::PredictingGLWeaver*   srWeaverOGL_  = nullptr;
 
 static unsigned int renderWidth_ {};
 static unsigned int renderHeight_ {};
@@ -148,7 +151,7 @@ void SRInterfaceDX9::Release()
 {
     SAFE_DELETE(srWeaverDX9_);
 
-    if (srWeaverDX9_ == nullptr && srWeaverDX11_ == nullptr)
+    if (srWeaverDX9_ == nullptr && srWeaverDX11_ == nullptr && srWeaverOGL_ == nullptr)
         SAFE_DELETE(srContext_);
 
     delete this;
@@ -196,7 +199,7 @@ void SRInterfaceDX11::Release()
 {
     SAFE_DELETE(srWeaverDX11_);
 
-    if (srWeaverDX9_ == nullptr && srWeaverDX11_ == nullptr)
+    if (srWeaverDX9_ == nullptr && srWeaverDX11_ == nullptr && srWeaverOGL_ == nullptr)
         SAFE_DELETE(srContext_);
 
     delete this;
@@ -210,4 +213,52 @@ void SRInterfaceDX11::GetSRRenderSurface(ID3D11RenderTargetView** renderTarget)
 void SRInterfaceDX11::PerformWeave()
 {
     srWeaverDX11_->weave(renderWidth_, renderHeight_);
+}
+
+//-------------------------------------------------------------------------
+// OpenGL interface to SR
+
+// OpenGL has no device object to pass in; the weaver binds to the rendering
+// context that is current on this thread when the weaver is constructed. The
+// caller must therefore have a valid GL context current before calling this.
+
+HRESULT SimulatedReality::CreateSRInterfaceOGL(unsigned int width, unsigned int height, HWND window, SRInterfaceOGL** ppReturnedSRInterfaceOGL)
+{
+    SetupSRContext();
+
+    renderWidth_  = width;
+    renderHeight_ = height;
+    srWeaverOGL_  = new SR::PredictingGLWeaver(*srContext_, renderWidth_, renderHeight_, window);
+
+    // Generally never expect to be more than 1 frame late
+    srWeaverOGL_->setLatencyInFrames(1);
+
+    // Must be done after Weaver creation, otherwise eye tracking is broken.
+    srContext_->initialize();
+
+    *ppReturnedSRInterfaceOGL = new SRInterfaceOGL();
+
+    return S_OK;
+}
+
+void SRInterfaceOGL::Release()
+{
+    SAFE_DELETE(srWeaverOGL_);
+
+    if (srWeaverDX9_ == nullptr && srWeaverDX11_ == nullptr && srWeaverOGL_ == nullptr)
+        SAFE_DELETE(srContext_);
+
+    delete this;
+}
+
+// Returns the OpenGL framebuffer object that SR uses for weaving. Render the
+// side-by-side stereo image into it, then call PerformWeave().
+void SRInterfaceOGL::GetSRRenderSurface(GLuint* frameBuffer)
+{
+    *frameBuffer = srWeaverOGL_->getFrameBuffer();
+}
+
+void SRInterfaceOGL::PerformWeave()
+{
+    srWeaverOGL_->weave(renderWidth_, renderHeight_);
 }

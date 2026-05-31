@@ -99,7 +99,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -108,18 +108,20 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>opencv_world343.lib;SimulatedRealityCore.lib;SimulatedRealityDirectX.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world343.lib;SimulatedRealityCore.lib;SimulatedRealityDirectX.lib;SimulatedRealityOpenGL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64;$(ProjectDir)SR-SDK-1.33.1\x64\lib</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /F /Y SR.hpp SR-lib\include\</Command>
+      <Command>xcopy /F /Y SR.hpp SR-lib\include\
+xcopy /F /Y $(SolutionDir)SR-SDK-1.33.1\License.txt SR-lib\
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -129,11 +131,13 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>opencv_world343.lib;SimulatedRealityCore32.lib;SimulatedRealityDirectX32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world343.lib;SimulatedRealityCore32.lib;SimulatedRealityDirectX32.lib;SimulatedRealityOpenGL32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86;$(ProjectDir)SR-SDK-1.33.1\x32\lib</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /F /Y SR.hpp SR-lib\include\</Command>
+      <Command>xcopy /F /Y SR.hpp SR-lib\include\
+xcopy /F /Y $(SolutionDir)SR-SDK-1.33.1\License.txt SR-lib\
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -142,7 +146,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -150,11 +154,13 @@
       <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\include;$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>opencv_world343.lib;SimulatedRealityCore.lib;SimulatedRealityDirectX.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world343.lib;SimulatedRealityCore.lib;SimulatedRealityDirectX.lib;SimulatedRealityOpenGL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x64\third_party\OpenCV\lib\x64;$(ProjectDir)SR-SDK-1.33.1\x64\lib</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /F /Y SR.hpp SR-lib\include\</Command>
+      <Command>xcopy /F /Y SR.hpp SR-lib\include\
+xcopy /F /Y $(SolutionDir)SR-SDK-1.33.1\License.txt SR-lib\
+</Command>
     </PostBuildEvent>
     <ProjectReference />
   </ItemDefinitionGroup>
@@ -164,7 +170,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -173,11 +179,13 @@
       <AdditionalIncludeDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\include;$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>opencv_world343.lib;SimulatedRealityCore32.lib;SimulatedRealityDirectX32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world343.lib;SimulatedRealityCore32.lib;SimulatedRealityDirectX32.lib;SimulatedRealityOpenGL32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)SR-SDK-1.33.1\x32\third_party\OpenCV\lib\x86;$(ProjectDir)SR-SDK-1.33.1\x32\lib</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /F /Y SR.hpp SR-lib\include\</Command>
+      <Command>xcopy /F /Y SR.hpp SR-lib\include\
+xcopy /F /Y $(SolutionDir)SR-SDK-1.33.1\License.txt SR-lib\
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
