@@ -10,49 +10,60 @@
 //
 //  1) Call CreateSRInterfaceDX9() to create an SRInterfaceDX9 object.
 //     SRContext and Weaver will be initialized.
-//  2) Draw loop:
-//    1) Call GetSRRenderSurface() to get the SR Surface/RenderTarget.
-//    2) Draw or StretchRect() final output into that Surface/RenderTarget.
-//    3) Call PerformWeave() to have the stereo drawn to backbuffer.
+//  2) Call SetInputTexture for surface you will use for stereo output
+//  3) Draw loop:
+//    1) Render your side-by-side stereo image into input texture.
+//    2) Bind your output render target / backbuffer.
+//    3) Call Weave() to weave the stereo into the bound target.
 //    4) Call Present() to display stereo.
-//  3) On exit, call Release()
+//  4) On exit, call Delete()
+//
+// NOTE (SDK 1.34.10): the weaver no longer owns the intermediate buffer.
+// You render into your own texture and pass it in via SetInputTexture();
+// Weave() writes into whatever render target is currently bound.
+// Anti-crosstalk (Dynamic ACT) is applied automatically by the weaver.
 
 namespace SimulatedReality
 {
 
+//-------------------------------------------------------------------------
 class SRInterfaceDX9
 {
 public:
-    void Release();
+    void SetInputTexture(IDirect3DTexture9* texture, bool isSRGB);
+    void Delete();
 
-    void GetSRRenderSurface(IDirect3DSurface9** renderTarget);
-    void PerformWeave();
+    void Weave();
 };
-extern "C" HRESULT CreateSRInterfaceDX9(IDirect3DDevice9* device, unsigned int width, unsigned int height, HWND window, SRInterfaceDX9** ppReturnedSRInterfaceDX9);
+extern "C" HRESULT CreateSRInterfaceDX9(IDirect3DDevice9* device, HWND window, SRInterfaceDX9** ppReturnedSRInterfaceDX9);
 
-
+//-------------------------------------------------------------------------
 class SRInterfaceDX11
 {
 public:
-    void Release();
+    void SetInputTexture(ID3D11ShaderResourceView* texture);
+    void Delete();
 
-    void GetSRRenderSurface(ID3D11RenderTargetView** renderTarget);
-    void PerformWeave();
+    void Weave();
 };
-extern "C" HRESULT CreateSRInterfaceDX11(ID3D11Device1* device1, ID3D11DeviceContext1* context1, unsigned int width, unsigned int height, HWND window, SRInterfaceDX11** ppReturnedSRInterfaceDX11);
+extern "C" HRESULT CreateSRInterfaceDX11(ID3D11DeviceContext* context, HWND window, SRInterfaceDX11** ppReturnedSRInterfaceDX11);
 
-
-typedef unsigned int GLuint;  // Standard interface for OpenGL
+//-------------------------------------------------------------------------
+// OpenGL has no lightweight types-only header, so (like the SR SDK's own
+// glweaver.h, GLEW, glad, etc.) we alias the GL handle types we expose.
+// These match <GL/gl.h> exactly, so they are harmless redefinitions if a
+// real GL header is also included, and they avoid dragging GL into DX-only
+// consumers.
+typedef unsigned int GLuint;
 
 class SRInterfaceOGL
 {
 public:
-    void Release();
+    void SetInputTexture(GLuint texture);
+    void Delete();
 
-    void GetSRRenderSurface(GLuint* frameBuffer);
-    void PerformWeave();
+    void Weave();
 };
-
-extern "C" HRESULT CreateSRInterfaceOGL(unsigned int width, unsigned int height, HWND window, SRInterfaceOGL** ppReturnedSRInterfaceOGL);
+extern "C" HRESULT CreateSRInterfaceOGL(HWND window, SRInterfaceOGL** ppReturnedSRInterfaceOGL);
 
 }  // namespace SimulatedReality
