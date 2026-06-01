@@ -22,6 +22,25 @@
 // You render into your own texture and pass it in via SetInputTexture();
 // Weave() writes into whatever render target is currently bound.
 // Anti-crosstalk (Dynamic ACT) is applied automatically by the weaver.
+//
+// DELAY-LOAD REQUIREMENT (important for whoever links this lib):
+// This is a static library, and the SR import libraries are merged into it,
+// so linking SR-mt.lib (or -mtd/-md/-mdd) gives your module a load-time (hard)
+// dependency on the SR runtime DLLs. If those DLLs are absent the process will
+// fail to launch BEFORE any of our code runs, defeating the LoadLibrary check
+// we do internally. To keep the dependency soft, the FINAL module that links
+// this lib (e.g. the host EXE/DLL) must delay-load the SR DLLs in its linker
+// settings:
+//   Linker > Input > Delay Loaded Dlls:
+//     SimulatedRealityCore.dll;SimulatedRealityDirectX.dll;
+//     SimulatedRealityOpenGL.dll;opencv_world343.dll
+//   (32-bit builds: SimulatedRealityCore32.dll;SimulatedRealityDirectX32.dll;
+//    SimulatedRealityOpenGL32.dll;opencv_world343.dll)
+// Leave opengl32.dll as a normal import (it always ships with Windows).
+// delayimp.lib is linked automatically once delay-loaded DLLs are specified.
+// Delay-load cannot be baked into a static lib, so it must live in the
+// consumer; our Create* functions then probe availability via LoadLibrary and
+// return E_NOINTERFACE when the runtime is missing, instead of crashing.
 
 namespace SimulatedReality
 {
