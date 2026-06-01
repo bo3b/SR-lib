@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - name: Checkout master
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.ref }}
         
@@ -54,21 +54,25 @@ jobs:
           dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC"
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v3
 
-        # Build all 4 target libraries
+        # Build all 8 target libraries: {Debug,Release} x {MT,MD} x {x32,x64}
       - name: Build into SR-Lib directory
         shell: cmd
         run: |
           echo(
-          echo === Building Win32 target ===
-          MSBUILD SR-lib.sln /p:Configuration="Debug" /p:Platform=x32 /v:minimal /target:rebuild /p:PlatformToolset=v143
-          MSBUILD SR-lib.sln /p:Configuration="Release" /p:Platform=x32 /v:minimal /target:rebuild /p:PlatformToolset=v143
+          echo === Building Win32 (x32) targets ===
+          MSBUILD SR-lib.sln /p:Configuration="Debug-MT" /p:Platform=x32 /v:minimal /target:rebuild /p:PlatformToolset=v143
+          MSBUILD SR-lib.sln /p:Configuration="Release-MT" /p:Platform=x32 /v:minimal /target:rebuild /p:PlatformToolset=v143
+          MSBUILD SR-lib.sln /p:Configuration="Debug-MD" /p:Platform=x32 /v:minimal /target:rebuild /p:PlatformToolset=v143
+          MSBUILD SR-lib.sln /p:Configuration="Release-MD" /p:Platform=x32 /v:minimal /target:rebuild /p:PlatformToolset=v143
           echo(
-          echo === Building x64 target ===
-          MSBUILD SR-lib.sln /p:Configuration="Debug" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v143
-          MSBUILD SR-lib.sln /p:Configuration="Release" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v143
-          
+          echo === Building x64 targets ===
+          MSBUILD SR-lib.sln /p:Configuration="Debug-MT" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v143
+          MSBUILD SR-lib.sln /p:Configuration="Release-MT" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v143
+          MSBUILD SR-lib.sln /p:Configuration="Debug-MD" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v143
+          MSBUILD SR-lib.sln /p:Configuration="Release-MD" /p:Platform=x64 /v:minimal /target:rebuild /p:PlatformToolset=v143
+
       - name: Get tag name
         shell: bash
         run: |
@@ -88,7 +92,7 @@ jobs:
           7z l "SR-lib/SR-lib_v${TAG_NUM}.7z"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.TAG_NUM }}
           name: Release build for v${{ env.TAG_NUM }} (x32, x64)
