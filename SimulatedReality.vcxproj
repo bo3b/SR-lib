@@ -127,49 +127,49 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-MT|x64'">
     <TargetName>SR-mtd</TargetName>
-    <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\Debug\</OutDir>
+    <OutDir>$(ProjectDir)SR-lib\lib\$(PlatformTarget)\Debug\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-MT|Win32'">
     <TargetName>SR-mtd</TargetName>
-    <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\Debug\</OutDir>
+    <OutDir>$(ProjectDir)SR-lib\lib\$(PlatformTarget)\Debug\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-MT|x64'">
     <TargetName>SR-mt</TargetName>
-    <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\Release\</OutDir>
+    <OutDir>$(ProjectDir)SR-lib\lib\$(PlatformTarget)\Release\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-MT|Win32'">
     <TargetName>SR-mt</TargetName>
-    <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\Release\</OutDir>
+    <OutDir>$(ProjectDir)SR-lib\lib\$(PlatformTarget)\Release\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-MD|x64'">
     <TargetName>SR-mdd</TargetName>
-    <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\Debug\</OutDir>
+    <OutDir>$(ProjectDir)SR-lib\lib\$(PlatformTarget)\Debug\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-MD|Win32'">
     <TargetName>SR-mdd</TargetName>
-    <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\Debug\</OutDir>
+    <OutDir>$(ProjectDir)SR-lib\lib\$(PlatformTarget)\Debug\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-MD|x64'">
     <TargetName>SR-md</TargetName>
-    <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\Release\</OutDir>
+    <OutDir>$(ProjectDir)SR-lib\lib\$(PlatformTarget)\Release\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-MD|Win32'">
     <TargetName>SR-md</TargetName>
-    <OutDir>$(ProjectDir)SR-lib\lib\x$(PlatformArchitecture)\Release\</OutDir>
+    <OutDir>$(ProjectDir)SR-lib\lib\$(PlatformTarget)\Release\</OutDir>
     <IntDir>$(ProjectDir)bin\x$(PlatformArchitecture)\$(Configuration)\</IntDir>
     <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
