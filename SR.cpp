@@ -163,12 +163,13 @@ void SRInterfaceDX9::Delete()
 
 // Hand the weaver the side-by-side stereo texture. The weaver samples
 // from it during Weave(). This is not done every frame.
-void SRInterfaceDX9::SetInputTexture(IDirect3DTexture9* texture, bool isSRGB)
+void SRInterfaceDX9::SetInputTexture(IDirect3DTexture9* texture, bool isSRGB, bool outputSRGB)
 {
     D3DSURFACE_DESC desc = {};
     texture->GetLevelDesc(0, &desc);
 
     srWeaverDX9_->setInputViewTexture(texture, desc.Width, desc.Height, desc.Format, isSRGB);
+    srWeaverDX9_->setOutputSRGBWrite(outputSRGB);
 }
 
 void SRInterfaceDX9::Weave()

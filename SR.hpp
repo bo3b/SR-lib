@@ -49,7 +49,7 @@ namespace SimulatedReality
 class SRInterfaceDX9
 {
 public:
-    void SetInputTexture(IDirect3DTexture9* texture, bool isSRGB);
+    void SetInputTexture(IDirect3DTexture9* texture, bool isSRGB, bool outputSRGB = true);
     void Delete();
 
     void Weave();
