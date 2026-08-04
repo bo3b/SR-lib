@@ -78,6 +78,13 @@ else()
     set(_srlib_third_dir "x86")
 endif()
 
+# Cached so a consumer can point this elsewhere, but self-healing: a cache entry
+# left over from a previous SDK version would otherwise pin a directory that no
+# longer exists, the EXISTS check below would fail, and LeiaSR would silently
+# disable itself — the exact outcome globbing for the version is meant to avoid.
+if (DEFINED SRLIB_SDKROOT AND NOT EXISTS "${SRLIB_SDKROOT}/lib")
+    unset(SRLIB_SDKROOT CACHE)
+endif()
 set(SRLIB_SDKROOT "${SRLIB_SDK_VERSION_DIR}/${_srlib_arch}"
     CACHE PATH "Simulated Reality SDK root (architecture subdirectory)")
 
