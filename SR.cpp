@@ -2,15 +2,19 @@
 
 #include <d3d9.h>
 #include <d3d11_1.h>
+#include <d3d12.h>
 #include <GL/gl.h>
 #include <string>
 
 #include "sr/management/srcontext.h"
+#include "sr/sense/display/switchablehint.h"
 #include "sr/weaver/dx9weaver.h"
 #include "sr/weaver/dx11weaver.h"
+#include "sr/weaver/dx12weaver.h"
 #include "sr/weaver/glweaver.h"
 
 using SimulatedReality::SRInterfaceDX11;
+using SimulatedReality::SRInterfaceDX12;
 using SimulatedReality::SRInterfaceDX9;
 using SimulatedReality::SRInterfaceOGL;
 
@@ -23,10 +27,12 @@ using SimulatedReality::SRInterfaceOGL;
 //   opencv_world343.lib;
 //   SimulatedRealityCore32.lib;
 //   SimulatedRealityDirectX32.lib;
+//   SimulatedRealityDisplays32.lib;   (SwitchableLensHint)
 //  x64:
 //   opencv_world343.lib;
 //   SimulatedRealityCore.lib;
 //   SimulatedRealityDirectX.lib;
+//   SimulatedRealityDisplays.lib;     (SwitchableLensHint)
 //
 // Paths:
 //  x32:
@@ -88,7 +94,30 @@ static SR::SRContext* srContext_ = nullptr;
 
 static SR::IDX9Weaver1*  srWeaverDX9_  = nullptr;
 static SR::IDX11Weaver1* srWeaverDX11_ = nullptr;
+static SR::IDX12Weaver1* srWeaverDX12_ = nullptr;
 static SR::IGLWeaver1*   srWeaverOGL_  = nullptr;
+
+// Owned by srContext_ once created — we only null the pointer, never delete it.
+static SR::SwitchableLensHint* srLensHint_        = nullptr;
+static bool                    srLensHintTried_   = false;
+
+//-------------------------------------------------------------------------
+// The context outlives individual weavers, so it is only torn down once the
+// last one has gone. Every Delete() routes through here so the four copies of
+// this condition can't drift apart as backends are added.
+static void ReleaseSRContextIfIdle()
+{
+    if (srWeaverDX9_ != nullptr || srWeaverDX11_ != nullptr ||
+        srWeaverDX12_ != nullptr || srWeaverOGL_ != nullptr)
+        return;
+
+    // The hint is a Sense owned by the context; deleting the context takes it
+    // with it. Just drop our pointer and re-arm the lazy create.
+    srLensHint_      = nullptr;
+    srLensHintTried_ = false;
+
+    SAFE_DELETE(srContext_);
+}
 
 //-------------------------------------------------------------------------
 static HRESULT SetupSRContext()
@@ -100,11 +129,15 @@ static HRESULT SetupSRContext()
     // Let's double check we are able find the SR DLLs we need for simulated reality,
     // so we can return a good error if not.
 
+    // LoadLibraryW explicitly rather than the LoadLibrary macro: the literals
+    // here are already wide, so the macro only resolves correctly for consumers
+    // that build with UNICODE defined. Naming the W entry point directly makes
+    // this compile the same either way.
     HMODULE sr_core_dll = nullptr;
 #ifdef _WIN64
-    sr_core_dll = LoadLibrary(L"SimulatedRealityCore.dll");
+    sr_core_dll = LoadLibraryW(L"SimulatedRealityCore.dll");
 #else
-    sr_core_dll = LoadLibrary(L"SimulatedRealityCore32.dll");
+    sr_core_dll = LoadLibraryW(L"SimulatedRealityCore32.dll");
 #endif
     if (sr_core_dll == nullptr)
         return E_NOINTERFACE;
@@ -155,8 +188,7 @@ void SRInterfaceDX9::Delete()
         srWeaverDX9_ = nullptr;
     }
 
-    if (srWeaverDX9_ == nullptr && srWeaverDX11_ == nullptr && srWeaverOGL_ == nullptr)
-        SAFE_DELETE(srContext_);
+    ReleaseSRContextIfIdle();
 
     delete this;
 }
@@ -212,8 +244,7 @@ void SRInterfaceDX11::Delete()
         srWeaverDX11_ = nullptr;
     }
 
-    if (srWeaverDX9_ == nullptr && srWeaverDX11_ == nullptr && srWeaverOGL_ == nullptr)
-        SAFE_DELETE(srContext_);
+    ReleaseSRContextIfIdle();
 
     delete this;
 }
@@ -242,6 +273,101 @@ void SRInterfaceDX11::SetInputTexture(ID3D11ShaderResourceView* texture)
 void SRInterfaceDX11::Weave()
 {
     srWeaverDX11_->weave();
+}
+
+//-------------------------------------------------------------------------
+// DX12 interface to SR
+//-------------------------------------------------------------------------
+//  Unlike DX9/DX11, the DX12 weaver has no device context to record into. It
+//  records into a caller-supplied command list, so the command list and the
+//  viewport/scissor are per-frame state rather than create-time state.
+
+HRESULT SimulatedReality::CreateSRInterfaceDX12(ID3D12Device* device, HWND window, SRInterfaceDX12** ppReturnedSRInterfaceDX12)
+{
+    HRESULT hr = SetupSRContext();
+    if (FAILED(hr))
+        return hr;
+
+    WeaverErrorCode err = SR::CreateDX12Weaver(srContext_, device, window, &srWeaverDX12_);
+    if (err != WeaverSuccess || srWeaverDX12_ == nullptr)
+        return E_NOINTERFACE;
+
+    srWeaverDX12_->setLatencyInFrames(1);     // Generally never expect to be more than 1 frame late
+    srWeaverDX12_->enableLateLatching(true);  // Can theoretically improve crosstalk
+
+    // Must be done after Weaver creation, otherwise eye tracking is broken.
+    srContext_->initialize();
+
+    *ppReturnedSRInterfaceDX12 = new SRInterfaceDX12();
+
+    return S_OK;
+}
+
+void SRInterfaceDX12::Delete()
+{
+    if (srWeaverDX12_ != nullptr)
+    {
+        // IDX12Weaver1 is an IDestroyable — destroy(), never `delete`. Deleting
+        // it is the older deprecated DX12Weaver convention and asserts in debug.
+        srWeaverDX12_->destroy();
+        srWeaverDX12_ = nullptr;
+    }
+
+    ReleaseSRContextIfIdle();
+
+    delete this;
+}
+
+// Hand the weaver the side-by-side stereo texture. Size and format come off the
+// resource desc rather than from the caller, matching the other backends — and
+// removing any chance of describing the texture as a size it isn't, which the
+// weaver would happily sample past the edge of.
+void SRInterfaceDX12::SetInputTexture(ID3D12Resource* texture)
+{
+    D3D12_RESOURCE_DESC desc = texture->GetDesc();
+
+    srWeaverDX12_->setInputViewTexture(texture,
+                                       static_cast<int>(desc.Width),
+                                       static_cast<int>(desc.Height),
+                                       desc.Format);
+}
+
+void SRInterfaceDX12::SetOutputFormat(DXGI_FORMAT format)
+{
+    srWeaverDX12_->setOutputFormat(format);
+}
+
+void SRInterfaceDX12::SetCommandList(ID3D12GraphicsCommandList* commandList)
+{
+    srWeaverDX12_->setCommandList(commandList);
+}
+
+void SRInterfaceDX12::SetViewport(const D3D12_VIEWPORT& viewport)
+{
+    srWeaverDX12_->setViewport(viewport);
+}
+
+void SRInterfaceDX12::SetScissorRect(const D3D12_RECT& scissorRect)
+{
+    srWeaverDX12_->setScissorRect(scissorRect);
+}
+
+void SRInterfaceDX12::Weave()
+{
+    srWeaverDX12_->weave();
+}
+
+// Convenience overload for the usual per-frame case. Note the weaver's own
+// setViewport() does not drive the D3D12 rasterizer — the caller must still
+// have called RSSetViewports/RSSetScissorRects on the command list with the
+// destination dimensions, or the weave rasterizes at whatever size the previous
+// pass left behind. See the warning in SR.hpp.
+void SRInterfaceDX12::Weave(ID3D12GraphicsCommandList* commandList, const D3D12_VIEWPORT& viewport, const D3D12_RECT& scissorRect)
+{
+    srWeaverDX12_->setCommandList(commandList);
+    srWeaverDX12_->setViewport(viewport);
+    srWeaverDX12_->setScissorRect(scissorRect);
+    srWeaverDX12_->weave();
 }
 
 //-------------------------------------------------------------------------
@@ -280,8 +406,7 @@ void SRInterfaceOGL::Delete()
         srWeaverOGL_ = nullptr;
     }
 
-    if (srWeaverDX9_ == nullptr && srWeaverDX11_ == nullptr && srWeaverOGL_ == nullptr)
-        SAFE_DELETE(srContext_);
+    ReleaseSRContextIfIdle();
 
     delete this;
 }
@@ -311,4 +436,81 @@ void SRInterfaceOGL::SetInputTexture(GLuint texture)
 void SRInterfaceOGL::Weave()
 {
     srWeaverOGL_->weave();
+}
+
+//-------------------------------------------------------------------------
+// Switchable lens hint
+//-------------------------------------------------------------------------
+//  Created lazily rather than inside SetupSRContext, for two reasons. First,
+//  SwitchableLensHint::create must run AFTER srContext_->initialize(), which
+//  each CreateSRInterface* does at the very end — by the time a caller can
+//  reach these functions, initialize() has run. Second, consumers that never
+//  touch the lens API then never construct the sense at all, so nothing about
+//  the existing paths changes.
+//
+//  create() throws when the connected display has no switchable lens, which is
+//  the common case on fixed-lens panels — so it is a normal outcome to report,
+//  not an error to propagate. We latch the attempt either way so a display
+//  without a lens doesn't re-throw on every focus change.
+
+static SR::SwitchableLensHint* GetLensHint()
+{
+    if (srLensHintTried_)
+        return srLensHint_;
+
+    srLensHintTried_ = true;
+
+    if (srContext_ == nullptr)
+    {
+        // No context yet — leave the latch set so we don't retry per call, but
+        // allow a later CreateSRInterface* to reset it via ReleaseSRContextIfIdle.
+        srLensHintTried_ = false;
+        return nullptr;
+    }
+
+    try
+    {
+        srLensHint_ = SR::SwitchableLensHint::create(*srContext_);
+    }
+    catch (...)
+    {
+        srLensHint_ = nullptr;
+    }
+
+    return srLensHint_;
+}
+
+HRESULT SimulatedReality::SREnableLensHint()
+{
+    SR::SwitchableLensHint* hint = GetLensHint();
+    if (hint == nullptr)
+        return E_NOINTERFACE;
+
+    hint->enable();
+    return S_OK;
+}
+
+HRESULT SimulatedReality::SRDisableLensHint()
+{
+    SR::SwitchableLensHint* hint = GetLensHint();
+    if (hint == nullptr)
+        return E_NOINTERFACE;
+
+    hint->disable();
+    return S_OK;
+}
+
+HRESULT SimulatedReality::SRIsLensHintEnabled(bool* enabled)
+{
+    if (enabled == nullptr)
+        return E_POINTER;
+
+    *enabled = false;
+
+    SR::SwitchableLensHint* hint = GetLensHint();
+    if (hint == nullptr)
+        return E_NOINTERFACE;
+
+    *enabled = hint->isEnabled();
+    return S_OK;
 }
