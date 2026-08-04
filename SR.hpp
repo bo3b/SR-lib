@@ -34,13 +34,15 @@
 // settings:
 //   Linker > Input > Delay Loaded Dlls:
 //     SimulatedRealityCore.dll;SimulatedRealityDirectX.dll;
-//     SimulatedRealityOpenGL.dll;SimulatedRealityDisplays.dll;opencv_world343.dll
+//     SimulatedRealityOpenGL.dll;SimulatedRealityDisplays.dll;
+//     SimulatedRealityFaceTrackers.dll;opencv_world343.dll
 //   (32-bit builds: SimulatedRealityCore32.dll;SimulatedRealityDirectX32.dll;
-//    SimulatedRealityOpenGL32.dll;SimulatedRealityDisplays32.dll;opencv_world343.dll)
-// SimulatedRealityDisplays is what the lens-hint API below lives in; it is only
-// needed by consumers that call SREnableLensHint()/SRDisableLensHint(), but
-// listing it unconditionally is harmless (/DELAYLOAD on a DLL you don't import
-// is a no-op warning, not an error).
+//    SimulatedRealityOpenGL32.dll;SimulatedRealityDisplays32.dll;
+//    SimulatedRealityFaceTrackers32.dll;opencv_world343.dll)
+// SimulatedRealityDisplays holds the lens-hint API and SimulatedRealityFaceTrackers
+// holds the head/eye trackers, so those two are only pulled in by consumers that
+// use them — but listing them unconditionally is harmless (/DELAYLOAD on a DLL
+// you don't import is a no-op warning, not an error).
 // CMake consumers get the whole list applied for them by srlib_apply_delayload()
 // — see CMakeLists.txt.
 // Leave opengl32.dll as a normal import (it always ships with Windows).
@@ -53,6 +55,46 @@ namespace SimulatedReality
 {
 
 //-------------------------------------------------------------------------
+// Weaver tuning, common to every backend
+//-------------------------------------------------------------------------
+// Each SRInterface* below carries the same five calls, because they all sit on
+// the SDK's shared weaver base. Create* applies sensible defaults
+// (SetLatencyInFrames(1), EnableLateLatching(true)) so you only need these if
+// those don't suit you — with one exception, SetShaderSRGBConversion, which has
+// no default that is right for everyone:
+//
+//   SetShaderSRGBConversion(read, write)
+//     Whether the weaver applies gamma conversion sampling your input texture
+//     and writing its output. Get this wrong and the image is over- or
+//     under-saturated rather than broken, so it is easy to ship by accident.
+//     There is no universally correct setting — it depends on whether your
+//     input and output carry sRGB-encoded or linear values:
+//       (true, true)   input is sRGB-encoded, output surface is _UNORM/linear
+//                      — the weaver decodes on read and re-encodes on write.
+//       (false, false) both sides already hold the values you want, e.g. your
+//                      compose shader already did the sRGB encode, or you bound
+//                      _SRGB views and the hardware is doing it. Letting the
+//                      weaver convert as well double-applies gamma.
+//     Shipping integrations genuinely differ here, so test it against your own
+//     formats rather than copying a value.
+//
+//   SetLatencyInFrames / SetLatency
+//     How far ahead the weaver predicts eye position. Frames is the easy one;
+//     SetLatency takes microseconds if you know your actual pipeline depth.
+//
+//   EnableLateLatching
+//     Re-samples tracking as late as possible before the weave. Can reduce
+//     crosstalk. On by default.
+//
+//   GetPredictedEyePositions
+//     The predicted left/right eye positions the weaver is about to weave with,
+//     in millimetres. This is the cheapest possible eye-position source — it
+//     needs no tracker, no listener and no SRRequestTracking() opt-in, because
+//     the weaver is already computing it. If all you want is to drive a virtual
+//     stereo camera, prefer this over the tracking API further down. Returns
+//     false if no weaver exists yet.
+
+//-------------------------------------------------------------------------
 class SRInterfaceDX9
 {
 public:
@@ -60,6 +102,13 @@ public:
     void Delete();
 
     void Weave();
+
+    // Shared weaver tuning — see the notes above the SRInterface classes.
+    void SetShaderSRGBConversion(bool read, bool write);
+    void SetLatencyInFrames(unsigned long long frames);
+    void SetLatency(unsigned long long microseconds);
+    void EnableLateLatching(bool enable);
+    bool GetPredictedEyePositions(float left[3], float right[3]);
 };
 extern "C" HRESULT CreateSRInterfaceDX9(IDirect3DDevice9* device, HWND window, SRInterfaceDX9** ppReturnedSRInterfaceDX9);
 
@@ -71,6 +120,13 @@ public:
     void Delete();
 
     void Weave();
+
+    // Shared weaver tuning — see the notes above the SRInterface classes.
+    void SetShaderSRGBConversion(bool read, bool write);
+    void SetLatencyInFrames(unsigned long long frames);
+    void SetLatency(unsigned long long microseconds);
+    void EnableLateLatching(bool enable);
+    bool GetPredictedEyePositions(float left[3], float right[3]);
 };
 extern "C" HRESULT CreateSRInterfaceDX11(ID3D11DeviceContext* context, HWND window, SRInterfaceDX11** ppReturnedSRInterfaceDX11);
 
@@ -120,6 +176,13 @@ public:
 
     void Weave();
     void Weave(ID3D12GraphicsCommandList* commandList, const D3D12_VIEWPORT& viewport, const D3D12_RECT& scissorRect);
+
+    // Shared weaver tuning — see the notes above the SRInterface classes.
+    void SetShaderSRGBConversion(bool read, bool write);
+    void SetLatencyInFrames(unsigned long long frames);
+    void SetLatency(unsigned long long microseconds);
+    void EnableLateLatching(bool enable);
+    bool GetPredictedEyePositions(float left[3], float right[3]);
 };
 extern "C" HRESULT CreateSRInterfaceDX12(ID3D12Device* device, HWND window, SRInterfaceDX12** ppReturnedSRInterfaceDX12);
 
@@ -138,6 +201,13 @@ public:
     void Delete();
 
     void Weave();
+
+    // Shared weaver tuning — see the notes above the SRInterface classes.
+    void SetShaderSRGBConversion(bool read, bool write);
+    void SetLatencyInFrames(unsigned long long frames);
+    void SetLatency(unsigned long long microseconds);
+    void EnableLateLatching(bool enable);
+    bool GetPredictedEyePositions(float left[3], float right[3]);
 };
 extern "C" HRESULT CreateSRInterfaceOGL(HWND window, SRInterfaceOGL** ppReturnedSRInterfaceOGL);
 
@@ -166,8 +236,123 @@ extern "C" HRESULT CreateSRInterfaceOGL(HWND window, SRInterfaceOGL** ppReturned
 extern "C" HRESULT SREnableLensHint();
 extern "C" HRESULT SRDisableLensHint();
 
+
 // *enabled receives whether the lens is currently on. Note this reflects the
 // arbitrated state across all applications, not just our own preference.
 extern "C" HRESULT SRIsLensHintEnabled(bool* enabled);
+
+//-------------------------------------------------------------------------
+// Head and eye tracking
+//-------------------------------------------------------------------------
+// The SDK delivers tracking by callback: you subclass a listener, open a
+// stream, and get accept() calls on an SR thread. That means every consumer
+// writes the same listener + stream + mutex boilerplate before it can read a
+// head position. This wraps that once — an internal listener caches the most
+// recent frame under a lock, and you poll it whenever suits your render loop.
+//
+// ORDERING — this is the part that bites. SR senses must be created BEFORE
+// SRContext::initialize(), and our CreateSRInterface* functions call
+// initialize() at the end of their work. So tracking cannot be switched on
+// after the fact the way the lens hint can:
+//
+//     SRRequestTracking(SR_TRACK_HEAD);          // FIRST
+//     CreateSRInterfaceDX12(device, hwnd, &sr);  // creates senses, initializes
+//     ...
+//     SRHeadData head;
+//     if (SUCCEEDED(SRGetHead(&head))) { ... }   // poll per frame
+//
+// Calling SRRequestTracking after a CreateSRInterface* returns E_NOT_VALID_STATE
+// and changes nothing. Delete()ing the last interface tears the senses down and
+// re-arms the request, so you can pick different flags on a later create.
+//
+// If you only want eye positions to drive a stereo camera, you probably don't
+// need any of this — GetPredictedEyePositions() on your interface gives you the
+// weaver's own prediction with no opt-in and no tracker at all.
+//
+// All coordinates are in MILLIMETRES, in the SR world space whose origin is the
+// centre of the display. Orientation is radians, (x, y, z) = (pitch, yaw, roll),
+// positive rotations clockwise from the user's perspective.
+
+// Mirrors the SDK's SR_point3d without dragging its headers into this one.
+struct SRVec3
+{
+    double x, y, z;
+};
+
+// Mirrors SR_headPose (SR::HeadPoseTracker).
+struct SRHeadPoseData
+{
+    unsigned long long frameId;      // autoincrement frame number
+    unsigned long long time;         // capture time, microseconds since epoch
+    SRVec3             position;     // head position, mm
+    SRVec3             orientation;  // pitch, yaw, roll in radians
+};
+
+// Mirrors SR_head (SR::HeadTracker) — the richer feed: pose plus the derived
+// eye and ear positions the SDK computes from it.
+struct SRHeadData
+{
+    unsigned long long frameId;
+    unsigned long long time;
+    SRVec3             position;
+    SRVec3             orientation;
+    SRVec3             eyeLeft;
+    SRVec3             eyeRight;
+    SRVec3             earLeft;
+    SRVec3             earRight;
+};
+
+// Mirrors SR_eyePair (SR::EyeTracker).
+struct SREyePairData
+{
+    unsigned long long frameId;
+    unsigned long long time;
+    SRVec3             left;
+    SRVec3             right;
+};
+
+// Which senses to create. Combine with |. Each maps to one SDK tracker:
+//
+//   SR_TRACK_HEAD       SR::HeadTracker      -> SRGetHead()
+//                       Pose plus eye and ear positions in one frame. This is
+//                       the one to pick if you want eyes AND head orientation,
+//                       since it carries both without running two senses.
+//   SR_TRACK_HEAD_POSE  SR::HeadPoseTracker  -> SRGetHeadPose()
+//                       Pose only. Cheaper if that is genuinely all you need.
+//   SR_TRACK_EYES       SR::EyeTracker       -> SRGetEyePair()
+//                       Filtered eye positions, smoothed by the SDK.
+//   SR_TRACK_EYES_RAW   SR::EyeTracker (raw) -> SRGetEyePair()
+//                       Unfiltered. Use when you apply your own filtering and
+//                       the SDK's smoothing would fight it. Mutually exclusive
+//                       with SR_TRACK_EYES; if both are set, RAW wins.
+enum SRTrackingFlags : unsigned int
+{
+    SR_TRACK_NONE      = 0u,
+    SR_TRACK_HEAD      = 1u << 0,
+    SR_TRACK_HEAD_POSE = 1u << 1,
+    SR_TRACK_EYES      = 1u << 2,
+    SR_TRACK_EYES_RAW  = 1u << 3,
+};
+
+// Request senses. MUST be called before CreateSRInterface*; see ORDERING above.
+// Returns E_NOT_VALID_STATE if an interface already exists.
+extern "C" HRESULT SRRequestTracking(unsigned int flags);
+
+// Which senses actually started. A tracker whose create() failed — no camera,
+// unsupported hardware — is dropped rather than failing the whole interface
+// creation, so this can be a subset of what you requested. Check it once after
+// CreateSRInterface* if you need to know whether to fall back.
+extern "C" unsigned int SRActiveTracking();
+
+// Poll the most recent frame. Each returns:
+//   S_OK               *out holds a frame
+//   E_PENDING          sense is running but no frame has arrived yet
+//   E_NOT_VALID_STATE  that sense was never requested or failed to start
+//   E_POINTER          out is null
+// Safe to call from your render thread; the SDK's callback thread writes under
+// the same lock.
+extern "C" HRESULT SRGetHead(SRHeadData* out);
+extern "C" HRESULT SRGetHeadPose(SRHeadPoseData* out);
+extern "C" HRESULT SRGetEyePair(SREyePairData* out);
 
 }  // namespace SimulatedReality

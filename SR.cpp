@@ -4,10 +4,21 @@
 #include <d3d11_1.h>
 #include <d3d12.h>
 #include <GL/gl.h>
+#include <mutex>
 #include <string>
 
 #include "sr/management/srcontext.h"
+#include "sr/sense/core/inputstream.h"
 #include "sr/sense/display/switchablehint.h"
+#include "sr/sense/eyetracker/eyepairlistener.h"
+#include "sr/sense/eyetracker/eyepairstream.h"
+#include "sr/sense/eyetracker/eyetracker.h"
+#include "sr/sense/headtracker/head.h"
+#include "sr/sense/headtracker/headlistener.h"
+#include "sr/sense/headtracker/headposelistener.h"
+#include "sr/sense/headtracker/headposestream.h"
+#include "sr/sense/headtracker/headposetracker.h"
+#include "sr/sense/headtracker/headtracker.h"
 #include "sr/weaver/dx9weaver.h"
 #include "sr/weaver/dx11weaver.h"
 #include "sr/weaver/dx12weaver.h"
@@ -77,14 +88,6 @@ using SimulatedReality::SRInterfaceOGL;
 // feels more natural to use in DirectX world. Note Delete is not a COM-style
 // refcounting Release; it unconditionally tears down the object.
 
-#define SAFE_DELETE(p)  \
-    {                   \
-        if (p)          \
-        {               \
-            delete (p); \
-            (p) = NULL; \
-        }               \
-    }
 
 //-------------------------------------------------------------------------
 // Sort of like member variables for SRInterfaceBase, but we don't want these
@@ -102,6 +105,190 @@ static SR::SwitchableLensHint* srLensHint_        = nullptr;
 static bool                    srLensHintTried_   = false;
 
 //-------------------------------------------------------------------------
+// Tracking
+//-------------------------------------------------------------------------
+//  The SDK pushes tracking at us on its own thread, one accept() call per
+//  captured frame. Consumers overwhelmingly want to *pull* the latest value
+//  when they render, so each listener below just caches the newest frame under
+//  a lock and the SRGet* functions read it back. That is the whole reason this
+//  exists: it is the boilerplate every SR consumer writes identically.
+//
+//  Frames are copied wholesale rather than field-by-field — SR_head and friends
+//  are PODs, so the copy is cheap and can't miss a field the SDK adds later.
+
+namespace {
+
+template <typename FrameType>
+class FrameCache
+{
+    std::mutex mutex_;
+    FrameType  frame_{};
+    bool       valid_ = false;
+
+public:
+    void store(const FrameType& f)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        frame_ = f;
+        valid_ = true;
+    }
+
+    bool load(FrameType& out)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (!valid_)
+            return false;
+        out = frame_;
+        return true;
+    }
+};
+
+class HeadCache : public SR::HeadListener
+{
+public:
+    SR::InputStream<SR::HeadStream> stream;
+    FrameCache<SR_head>             cache;
+
+    void accept(const SR_head& frame) override { cache.store(frame); }
+};
+
+class HeadPoseCache : public SR::HeadPoseListener
+{
+public:
+    SR::InputStream<SR::HeadPoseStream> stream;
+    FrameCache<SR_headPose>             cache;
+
+    void accept(const SR_headPose& frame) override { cache.store(frame); }
+};
+
+class EyePairCache : public SR::EyePairListener
+{
+public:
+    SR::InputStream<SR::EyePairStream> stream;
+    FrameCache<SR_eyePair>             cache;
+
+    void accept(const SR_eyePair& frame) override { cache.store(frame); }
+};
+
+void CopyVec(const SR_point3d& in, SimulatedReality::SRVec3& out)
+{
+    out.x = in.x;
+    out.y = in.y;
+    out.z = in.z;
+}
+
+}  // namespace
+
+static unsigned int srTrackingRequested_ = SimulatedReality::SR_TRACK_NONE;
+static unsigned int srTrackingActive_    = SimulatedReality::SR_TRACK_NONE;
+
+static SR::HeadTracker*     srHeadTracker_     = nullptr;
+static SR::HeadPoseTracker* srHeadPoseTracker_ = nullptr;
+static SR::EyeTracker*      srEyeTracker_      = nullptr;
+
+static HeadCache*     srHeadCache_     = nullptr;
+static HeadPoseCache* srHeadPoseCache_ = nullptr;
+static EyePairCache*  srEyePairCache_  = nullptr;
+
+//-------------------------------------------------------------------------
+// Called from every CreateSRInterface*, after the weaver exists but BEFORE
+// srContext_->initialize(). Senses have to be registered with the context
+// while it is still being built; the SDK's own samples do the same.
+//
+// A tracker that won't start (no camera, unsupported hardware) is dropped
+// rather than failing the whole interface creation — losing head tracking is
+// survivable, losing the weave is not. SRActiveTracking() reports what really
+// came up.
+static void StartRequestedTracking()
+{
+    using namespace SimulatedReality;
+
+    if (srContext_ == nullptr || srTrackingRequested_ == SR_TRACK_NONE)
+        return;
+
+    if (srTrackingRequested_ & SR_TRACK_HEAD)
+    {
+        try
+        {
+            srHeadTracker_ = SR::HeadTracker::create(*srContext_);
+            srHeadCache_   = new HeadCache();
+            srHeadCache_->stream.set(srHeadTracker_->openHeadStream(srHeadCache_));
+            srTrackingActive_ |= SR_TRACK_HEAD;
+        }
+        catch (...)
+        {
+            delete srHeadCache_;
+            srHeadCache_   = nullptr;
+            srHeadTracker_ = nullptr;
+        }
+    }
+
+    if (srTrackingRequested_ & SR_TRACK_HEAD_POSE)
+    {
+        try
+        {
+            srHeadPoseTracker_ = SR::HeadPoseTracker::create(*srContext_);
+            srHeadPoseCache_   = new HeadPoseCache();
+            srHeadPoseCache_->stream.set(srHeadPoseTracker_->openHeadPoseStream(srHeadPoseCache_));
+            srTrackingActive_ |= SR_TRACK_HEAD_POSE;
+        }
+        catch (...)
+        {
+            delete srHeadPoseCache_;
+            srHeadPoseCache_   = nullptr;
+            srHeadPoseTracker_ = nullptr;
+        }
+    }
+
+    if (srTrackingRequested_ & (SR_TRACK_EYES | SR_TRACK_EYES_RAW))
+    {
+        // RAW wins when both are set: a caller that explicitly asked for
+        // unfiltered data is applying its own filter, and handing it the
+        // smoothed feed instead would silently fight that.
+        const bool raw = (srTrackingRequested_ & SR_TRACK_EYES_RAW) != 0;
+        try
+        {
+            srEyeTracker_ = raw ? SR::EyeTracker::createRaw(*srContext_)
+                                : SR::EyeTracker::create(*srContext_);
+            srEyePairCache_ = new EyePairCache();
+            srEyePairCache_->stream.set(srEyeTracker_->openEyePairStream(srEyePairCache_));
+            srTrackingActive_ |= (raw ? SR_TRACK_EYES_RAW : SR_TRACK_EYES);
+        }
+        catch (...)
+        {
+            delete srEyePairCache_;
+            srEyePairCache_ = nullptr;
+            srEyeTracker_   = nullptr;
+        }
+    }
+}
+
+//-------------------------------------------------------------------------
+// The trackers are Senses owned by the SRContext, so they go when it goes — we
+// only drop our pointers. The listeners are ours: deleting one runs its
+// InputStream destructor, which stops the stream, so this must happen before
+// the context is destroyed.
+static void StopTracking()
+{
+    delete srHeadCache_;
+    srHeadCache_ = nullptr;
+    delete srHeadPoseCache_;
+    srHeadPoseCache_ = nullptr;
+    delete srEyePairCache_;
+    srEyePairCache_ = nullptr;
+
+    srHeadTracker_     = nullptr;
+    srHeadPoseTracker_ = nullptr;
+    srEyeTracker_      = nullptr;
+
+    srTrackingActive_ = SimulatedReality::SR_TRACK_NONE;
+
+    // Re-arm: the next CreateSRInterface* starts from a clean request, so a
+    // caller can choose different senses for a later session.
+    srTrackingRequested_ = SimulatedReality::SR_TRACK_NONE;
+}
+
+//-------------------------------------------------------------------------
 // The context outlives individual weavers, so it is only torn down once the
 // last one has gone. Every Delete() routes through here so the four copies of
 // this condition can't drift apart as backends are added.
@@ -116,7 +303,14 @@ static void ReleaseSRContextIfIdle()
     srLensHint_      = nullptr;
     srLensHintTried_ = false;
 
-    SAFE_DELETE(srContext_);
+    StopTracking();
+
+    // Paired with SRContext::create() — see SetupSRContext.
+    if (srContext_ != nullptr)
+    {
+        SR::SRContext::deleteSRContext(srContext_);
+        srContext_ = nullptr;
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -142,7 +336,24 @@ static HRESULT SetupSRContext()
     if (sr_core_dll == nullptr)
         return E_NOINTERFACE;
 
-    srContext_ = new SR::SRContext();
+    // SRContext::create() rather than `new SR::SRContext()`: the context's
+    // implementation lives in the SR DLL, and create()/deleteSRContext() are the
+    // matching pair for allocating it there. Constructing it with our own `new`
+    // and destroying it with our own `delete` puts the object on the wrong heap.
+    //
+    // It also documents throwing ServerNotAvailableException when the SR Service
+    // isn't running, which is an ordinary thing to happen on an end-user machine
+    // — the DLLs can be present with the service stopped. Catch it here rather
+    // than letting a C++ exception escape through an extern "C" HRESULT.
+    try
+    {
+        srContext_ = SR::SRContext::create();
+    }
+    catch (...)
+    {
+        srContext_ = nullptr;
+    }
+
     if (srContext_ == nullptr)
         return E_NOINTERFACE;
 
@@ -171,6 +382,11 @@ HRESULT SimulatedReality::CreateSRInterfaceDX9(IDirect3DDevice9* device, HWND wi
     // Can theoretically improve crosstalk.
     srWeaverDX9_->setLatencyInFrames(1);
     srWeaverDX9_->enableLateLatching(true);
+
+    // Senses must be registered while the context is still being built, so this
+    // sits between weaver creation and initialize(). No-op unless the caller
+    // asked for tracking via SRRequestTracking().
+    StartRequestedTracking();
 
     // Must be done after Weaver creation, otherwise eye tracking is broken.
     srContext_->initialize();
@@ -227,6 +443,11 @@ HRESULT SimulatedReality::CreateSRInterfaceDX11(ID3D11DeviceContext* context, HW
 
     srWeaverDX11_->setLatencyInFrames(1);     // Generally never expect to be more than 1 frame late
     srWeaverDX11_->enableLateLatching(true);  // Can theoretically improve crosstalk
+
+    // Senses must be registered while the context is still being built, so this
+    // sits between weaver creation and initialize(). No-op unless the caller
+    // asked for tracking via SRRequestTracking().
+    StartRequestedTracking();
 
     // Must be done after Weaver creation, otherwise eye tracking is broken.
     srContext_->initialize();
@@ -294,6 +515,11 @@ HRESULT SimulatedReality::CreateSRInterfaceDX12(ID3D12Device* device, HWND windo
 
     srWeaverDX12_->setLatencyInFrames(1);     // Generally never expect to be more than 1 frame late
     srWeaverDX12_->enableLateLatching(true);  // Can theoretically improve crosstalk
+
+    // Senses must be registered while the context is still being built, so this
+    // sits between weaver creation and initialize(). No-op unless the caller
+    // asked for tracking via SRRequestTracking().
+    StartRequestedTracking();
 
     // Must be done after Weaver creation, otherwise eye tracking is broken.
     srContext_->initialize();
@@ -389,6 +615,11 @@ HRESULT SimulatedReality::CreateSRInterfaceOGL(HWND window, SRInterfaceOGL** ppR
 
     srWeaverOGL_->setLatencyInFrames(1);     // Generally never expect to be more than 1 frame late
     srWeaverOGL_->enableLateLatching(true);  // Can theoretically improve crosstalk
+
+    // Senses must be registered while the context is still being built, so this
+    // sits between weaver creation and initialize(). No-op unless the caller
+    // asked for tracking via SRRequestTracking().
+    StartRequestedTracking();
 
     // Must be done after Weaver creation, otherwise eye tracking is broken.
     srContext_->initialize();
@@ -512,5 +743,161 @@ HRESULT SimulatedReality::SRIsLensHintEnabled(bool* enabled)
         return E_NOINTERFACE;
 
     *enabled = hint->isEnabled();
+    return S_OK;
+}
+
+//-------------------------------------------------------------------------
+// Shared weaver tuning
+//-------------------------------------------------------------------------
+//  All four weaver interfaces derive from IWeaverBase1, so these forward to one
+//  implementation apiece rather than four copies that could drift. Each is
+//  null-tolerant: calling a setter on an interface whose weaver has already
+//  been destroyed is a no-op, not a crash.
+
+namespace {
+
+void WeaverSetSRGB(SR::IWeaverBase1* weaver, bool read, bool write)
+{
+    if (weaver != nullptr)
+        weaver->setShaderSRGBConversion(read, write);
+}
+
+void WeaverSetLatencyInFrames(SR::IWeaverBase1* weaver, unsigned long long frames)
+{
+    if (weaver != nullptr)
+        weaver->setLatencyInFrames(static_cast<uint64_t>(frames));
+}
+
+void WeaverSetLatency(SR::IWeaverBase1* weaver, unsigned long long microseconds)
+{
+    if (weaver != nullptr)
+        weaver->setLatency(static_cast<uint64_t>(microseconds));
+}
+
+void WeaverEnableLateLatching(SR::IWeaverBase1* weaver, bool enable)
+{
+    if (weaver != nullptr)
+        weaver->enableLateLatching(enable);
+}
+
+bool WeaverGetPredictedEyes(SR::IWeaverBase1* weaver, float left[3], float right[3])
+{
+    if (weaver == nullptr || left == nullptr || right == nullptr)
+        return false;
+
+    weaver->getPredictedEyePositions(left, right);
+    return true;
+}
+
+}  // namespace
+
+#define SR_DEFINE_WEAVER_KNOBS(InterfaceName, weaverGlobal)                                        \
+    void InterfaceName::SetShaderSRGBConversion(bool read, bool write)                             \
+    {                                                                                              \
+        WeaverSetSRGB(weaverGlobal, read, write);                                                  \
+    }                                                                                              \
+    void InterfaceName::SetLatencyInFrames(unsigned long long frames)                              \
+    {                                                                                              \
+        WeaverSetLatencyInFrames(weaverGlobal, frames);                                            \
+    }                                                                                              \
+    void InterfaceName::SetLatency(unsigned long long microseconds)                                \
+    {                                                                                              \
+        WeaverSetLatency(weaverGlobal, microseconds);                                              \
+    }                                                                                              \
+    void InterfaceName::EnableLateLatching(bool enable)                                            \
+    {                                                                                              \
+        WeaverEnableLateLatching(weaverGlobal, enable);                                            \
+    }                                                                                              \
+    bool InterfaceName::GetPredictedEyePositions(float left[3], float right[3])                    \
+    {                                                                                              \
+        return WeaverGetPredictedEyes(weaverGlobal, left, right);                                  \
+    }
+
+SR_DEFINE_WEAVER_KNOBS(SRInterfaceDX9,  srWeaverDX9_)
+SR_DEFINE_WEAVER_KNOBS(SRInterfaceDX11, srWeaverDX11_)
+SR_DEFINE_WEAVER_KNOBS(SRInterfaceDX12, srWeaverDX12_)
+SR_DEFINE_WEAVER_KNOBS(SRInterfaceOGL,  srWeaverOGL_)
+
+#undef SR_DEFINE_WEAVER_KNOBS
+
+//-------------------------------------------------------------------------
+// Tracking — public surface
+//-------------------------------------------------------------------------
+
+HRESULT SimulatedReality::SRRequestTracking(unsigned int flags)
+{
+    // Too late once a context exists: its senses were registered before
+    // initialize() and cannot be added afterwards. Say so rather than quietly
+    // storing a request that will never take effect.
+    if (srContext_ != nullptr)
+        return E_NOT_VALID_STATE;
+
+    srTrackingRequested_ = flags;
+    return S_OK;
+}
+
+unsigned int SimulatedReality::SRActiveTracking()
+{
+    return srTrackingActive_;
+}
+
+HRESULT SimulatedReality::SRGetHead(SRHeadData* out)
+{
+    if (out == nullptr)
+        return E_POINTER;
+
+    if (srHeadCache_ == nullptr)
+        return E_NOT_VALID_STATE;
+
+    SR_head frame = {};
+    if (!srHeadCache_->cache.load(frame))
+        return E_PENDING;
+
+    out->frameId = frame.frameId;
+    out->time    = frame.time;
+    CopyVec(frame.headPose.position,    out->position);
+    CopyVec(frame.headPose.orientation, out->orientation);
+    CopyVec(frame.eyes.left,            out->eyeLeft);
+    CopyVec(frame.eyes.right,           out->eyeRight);
+    CopyVec(frame.ears.left,            out->earLeft);
+    CopyVec(frame.ears.right,           out->earRight);
+    return S_OK;
+}
+
+HRESULT SimulatedReality::SRGetHeadPose(SRHeadPoseData* out)
+{
+    if (out == nullptr)
+        return E_POINTER;
+
+    if (srHeadPoseCache_ == nullptr)
+        return E_NOT_VALID_STATE;
+
+    SR_headPose frame = {};
+    if (!srHeadPoseCache_->cache.load(frame))
+        return E_PENDING;
+
+    out->frameId = frame.frameId;
+    out->time    = frame.time;
+    CopyVec(frame.position,    out->position);
+    CopyVec(frame.orientation, out->orientation);
+    return S_OK;
+}
+
+HRESULT SimulatedReality::SRGetEyePair(SREyePairData* out)
+{
+    if (out == nullptr)
+        return E_POINTER;
+
+    if (srEyePairCache_ == nullptr)
+        return E_NOT_VALID_STATE;
+
+    SR_eyePair frame = {};
+    if (!srEyePairCache_->cache.load(frame))
+        return E_PENDING;
+
+    out->frameId = frame.frameId;
+    out->time    = frame.time;
+    CopyVec(frame.left,  out->left);
+    CopyVec(frame.right, out->right);
     return S_OK;
 }
