@@ -38,12 +38,14 @@ using SimulatedReality::SRInterfaceOGL;
 //   opencv_world343.lib;
 //   SimulatedRealityCore32.lib;
 //   SimulatedRealityDirectX32.lib;
-//   SimulatedRealityDisplays32.lib;   (SwitchableLensHint)
+//   SimulatedRealityDisplays32.lib;      (SwitchableLensHint)
+//   SimulatedRealityFaceTrackers32.lib;  (Head/HeadPose/Eye trackers)
 //  x64:
 //   opencv_world343.lib;
 //   SimulatedRealityCore.lib;
 //   SimulatedRealityDirectX.lib;
-//   SimulatedRealityDisplays.lib;     (SwitchableLensHint)
+//   SimulatedRealityDisplays.lib;        (SwitchableLensHint)
+//   SimulatedRealityFaceTrackers.lib;    (Head/HeadPose/Eye trackers)
 //
 // Paths:
 //  x32:
@@ -314,26 +316,63 @@ static void ReleaseSRContextIfIdle()
 }
 
 //-------------------------------------------------------------------------
-static HRESULT SetupSRContext()
+// Names differ by bitness; the 32-bit runtime suffixes every SR DLL with "32".
+#ifdef _WIN64
+#define SR_DLL_CORE    L"SimulatedRealityCore.dll"
+#define SR_DLL_DIRECTX L"SimulatedRealityDirectX.dll"
+#define SR_DLL_OPENGL  L"SimulatedRealityOpenGL.dll"
+#else
+#define SR_DLL_CORE    L"SimulatedRealityCore32.dll"
+#define SR_DLL_DIRECTX L"SimulatedRealityDirectX32.dll"
+#define SR_DLL_OPENGL  L"SimulatedRealityOpenGL32.dll"
+#endif
+
+// Probe a delay-loaded SR DLL. Every SR DLL is delay-loaded by the consumer, so
+// the first call into one that isn't on disk raises an SEH exception from the
+// delay-load helper — which a C++ catch can't intercept without compiling the
+// whole TU /EHa. LoadLibraryW just returns null instead, so this is how we find
+// out safely before touching any SDK entry point.
+//
+// Deliberately no FreeLibrary: another DLL already in the process may depend on
+// what we just loaded, and we're about to use it ourselves anyway.
+static bool srProbeDll(const wchar_t* name)
 {
+    return LoadLibraryW(name) != nullptr;
+}
+
+//-------------------------------------------------------------------------
+// backendDll is the weaver DLL for the interface being created — SR_DLL_DIRECTX
+// for DX9/11/12, SR_DLL_OPENGL for GL. It has to be probed per backend rather
+// than once globally: a machine can have the core runtime present while the
+// backend DLL is missing, and the core probe alone would wave that through to
+// an SEH inside CreateXxxWeaver.
+//
+// Probing the backend DLL is also the strongest single check available. On this
+// runtime SimulatedRealityDirectX.dll statically imports DimencoWeaving,
+// SimulatedRealityCore, SimulatedRealityDisplays, SimulatedRealityFaceTrackers
+// and opencv_world343, so a successful load resolves the whole chain. We still
+// probe the core DLL explicitly rather than lean on that: the static dependency
+// set is an implementation detail of a particular SDK build, and this costs one
+// refcount bump.
+static HRESULT SetupSRContext(const wchar_t* backendDll)
+{
+    // Checked on every create, including ones that reuse an existing context,
+    // since each backend brings its own weaver DLL.
+    if (!srProbeDll(backendDll))
+        return E_NOINTERFACE;
+
     // Might get called more than once.
     if (srContext_ != nullptr)
         return S_OK;
 
     // Let's double check we are able find the SR DLLs we need for simulated reality,
     // so we can return a good error if not.
-
+    //
     // LoadLibraryW explicitly rather than the LoadLibrary macro: the literals
     // here are already wide, so the macro only resolves correctly for consumers
     // that build with UNICODE defined. Naming the W entry point directly makes
     // this compile the same either way.
-    HMODULE sr_core_dll = nullptr;
-#ifdef _WIN64
-    sr_core_dll = LoadLibraryW(L"SimulatedRealityCore.dll");
-#else
-    sr_core_dll = LoadLibraryW(L"SimulatedRealityCore32.dll");
-#endif
-    if (sr_core_dll == nullptr)
+    if (!srProbeDll(SR_DLL_CORE))
         return E_NOINTERFACE;
 
     // SRContext::create() rather than `new SR::SRContext()`: the context's
@@ -368,7 +407,7 @@ static HRESULT SetupSRContext()
 
 HRESULT SimulatedReality::CreateSRInterfaceDX9(IDirect3DDevice9* device, HWND window, SRInterfaceDX9** ppReturnedSRInterfaceDX9)
 {
-    HRESULT hr = SetupSRContext();
+    HRESULT hr = SetupSRContext(SR_DLL_DIRECTX);
     if (FAILED(hr))
         return hr;
 
@@ -433,7 +472,7 @@ void SRInterfaceDX9::Weave()
 
 HRESULT SimulatedReality::CreateSRInterfaceDX11(ID3D11DeviceContext* context, HWND window, SRInterfaceDX11** ppReturnedSRInterfaceDX11)
 {
-    HRESULT hr = SetupSRContext();
+    HRESULT hr = SetupSRContext(SR_DLL_DIRECTX);
     if (FAILED(hr))
         return hr;
 
@@ -505,7 +544,7 @@ void SRInterfaceDX11::Weave()
 
 HRESULT SimulatedReality::CreateSRInterfaceDX12(ID3D12Device* device, HWND window, SRInterfaceDX12** ppReturnedSRInterfaceDX12)
 {
-    HRESULT hr = SetupSRContext();
+    HRESULT hr = SetupSRContext(SR_DLL_DIRECTX);
     if (FAILED(hr))
         return hr;
 
@@ -605,7 +644,7 @@ void SRInterfaceDX12::Weave(ID3D12GraphicsCommandList* commandList, const D3D12_
 
 HRESULT SimulatedReality::CreateSRInterfaceOGL(HWND window, SRInterfaceOGL** ppReturnedSRInterfaceOGL)
 {
-    HRESULT hr = SetupSRContext();
+    HRESULT hr = SetupSRContext(SR_DLL_OPENGL);
     if (FAILED(hr))
         return hr;
 
