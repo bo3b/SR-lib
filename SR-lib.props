@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SR-lib.props — the MSBuild counterpart of CMakeLists.txt's
+  srlib_apply_delayload(). Import it from any .vcxproj that links SR-lib (or the
+  SR import libraries directly):
+
+      <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+      <Import Project="path\to\SR-lib\SR-lib.props" />
+
+  and delete whatever hand-written <DelayLoadDLLs> list the project was
+  carrying. Both platforms are handled; nothing else about the project changes.
+
+  WHY THIS EXISTS
+
+  Linking the SR import libraries writes hard imports for the SR runtime DLLs
+  into the consuming module's import table. The Windows loader resolves those at
+  process start, so on a machine that has never had the SR Platform installed
+  the module fails to load — for an EXE that is a modal popup naming a DLL,
+  fired before main() runs; for an injected DLL it is a load failure the host
+  reports as "the mod doesn't work". /DELAYLOAD makes the loader skip them until
+  first call, which is what lets SR.cpp's LoadLibrary probes report a missing
+  runtime as E_NOINTERFACE instead of the process dying.
+
+  Delay-load cannot be baked into a static library, so it has to be applied to
+  the FINAL module (EXE/DLL) — which means every consumer used to hand-copy this
+  list, and silently regressed whenever SR.cpp started referencing a new SR
+  component. That is not hypothetical: SimulatedRealityDisplays (lens hint) and
+  SimulatedRealityFaceTrackers (head/eye tracking) entered the import table when
+  those APIs were added, and a consumer that didn't notice shipped a binary that
+  refused to load without the runtime. CMake consumers are covered by
+  srlib_apply_delayload(); this file closes the same hole for MSBuild.
+
+  opencv_world343.dll is THE one people miss: no consumer writes OpenCV code and
+  OpenCV appears nowhere in the project, but the SR import libs inline
+  cv::String destructors, so the linker emits a real import for it anyway. It is
+  usually the DLL the loader popup names.
+
+  The list is deliberately complete rather than tailored per consumer —
+  /DELAYLOAD on a DLL you don't import is a no-op. It costs one LNK4199 per
+  unused entry, which is why /ignore:4199 is set below; without that the noise
+  trains people to ignore link warnings.
+
+  Keep in sync with SRLIB_DELAYLOAD_DLLS / SRLIB_DELAYLOAD_DLLS_32 in
+  CMakeLists.txt.
+
+  VERIFY (do this before shipping, on both platforms):
+      dumpbin /imports MyModule.dll | findstr ".dll"
+  Every SR and OpenCV DLL must appear ONLY under "delay load imports". Anything
+  SR-related in the top-level import section will not load on a clean machine.
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- 64-bit: unsuffixed SR DLL names. "simulatedreality" is the aggregate
+       library and exists only here — there is no 32-bit twin. -->
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <SRLibDelayLoadDLLs>simulatedreality.dll;SimulatedRealityCore.dll;SimulatedRealityCameras.dll;SimulatedRealityHandTrackers.dll;SimulatedRealityFaceTrackers.dll;SimulatedRealityUserModelers.dll;SimulatedRealityDisplays.dll;SimulatedRealityDirectX.dll;SimulatedRealityOpenGL.dll;DimencoWeaving.dll;opencv_world343.dll</SRLibDelayLoadDLLs>
+  </PropertyGroup>
+
+  <!-- 32-bit: the SR DLLs carry a "32" suffix; the third-party ones do not. -->
+  <PropertyGroup Condition="'$(Platform)'=='Win32'">
+    <SRLibDelayLoadDLLs>SimulatedRealityCore32.dll;SimulatedRealityCameras32.dll;SimulatedRealityHandTrackers32.dll;SimulatedRealityFaceTrackers32.dll;SimulatedRealityUserModelers32.dll;SimulatedRealityDisplays32.dll;SimulatedRealityDirectX32.dll;SimulatedRealityOpenGL32.dll;DimencoWeaving32.dll;opencv_world343.dll</SRLibDelayLoadDLLs>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup Condition="'$(SRLibDelayLoadDLLs)'!=''">
+    <Link>
+      <DelayLoadDLLs>$(SRLibDelayLoadDLLs);%(DelayLoadDLLs)</DelayLoadDLLs>
+      <!-- delayimp.lib provides the delay-load helper the /DELAYLOAD thunks
+           call. MSBuild usually adds it implicitly; naming it is harmless and
+           keeps the props self-contained for hand-rolled link lines. -->
+      <AdditionalDependencies>delayimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!-- LNK4199: "/DELAYLOAD:x.dll ignored; no imports found" — expected for
+           every entry this particular consumer doesn't touch. -->
+      <AdditionalOptions>/ignore:4199 %(AdditionalOptions)</AdditionalOptions>
+    </Link>
+  </ItemDefinitionGroup>
+
+</Project>

@@ -316,6 +316,39 @@ static void ReleaseSRContextIfIdle()
 }
 
 //-------------------------------------------------------------------------
+// Bring the senses online. Called from every CreateSRInterface*, and the
+// ordering around it is load-bearing: initialize() must run AFTER weaver
+// creation or eye tracking silently never starts, while every call still
+// reports success and the panel just shows an image that ignores head motion.
+//
+// initialize() is not documented as throwing, and the SDK's own DX11 / DX12 /
+// OpenGL samples call it bare. But it is what starts every registered sense,
+// and DeviceNotAvailableException exists for precisely that failure -- a camera
+// unplugged, or claimed by another SR application, in the window between
+// SRContext::create() and here. Whether or not it can throw today, letting it
+// would send a C++ exception straight through an extern "C" HRESULT function
+// whose entire contract is to report failure as a return code, into a caller
+// that may not have exception handling enabled at all. Contain it here, where
+// the context lifecycle already lives.
+//
+// The weaver teardown on failure belongs to the caller: only it knows which
+// backend pointer to clear, and ReleaseSRContextIfIdle() keys off exactly those
+// pointers.
+static HRESULT InitializeSRContext()
+{
+    try
+    {
+        srContext_->initialize();
+    }
+    catch (...)
+    {
+        return E_NOINTERFACE;
+    }
+
+    return S_OK;
+}
+
+//-------------------------------------------------------------------------
 // Names differ by bitness; the 32-bit runtime suffixes every SR DLL with "32".
 #ifdef _WIN64
 #define SR_DLL_CORE    L"SimulatedRealityCore.dll"
@@ -428,7 +461,14 @@ HRESULT SimulatedReality::CreateSRInterfaceDX9(IDirect3DDevice9* device, HWND wi
     StartRequestedTracking();
 
     // Must be done after Weaver creation, otherwise eye tracking is broken.
-    srContext_->initialize();
+    hr = InitializeSRContext();
+    if (FAILED(hr))
+    {
+        srWeaverDX9_->destroy();
+        srWeaverDX9_ = nullptr;
+        ReleaseSRContextIfIdle();
+        return hr;
+    }
 
     *ppReturnedSRInterfaceDX9 = new SRInterfaceDX9();
 
@@ -489,7 +529,14 @@ HRESULT SimulatedReality::CreateSRInterfaceDX11(ID3D11DeviceContext* context, HW
     StartRequestedTracking();
 
     // Must be done after Weaver creation, otherwise eye tracking is broken.
-    srContext_->initialize();
+    hr = InitializeSRContext();
+    if (FAILED(hr))
+    {
+        srWeaverDX11_->destroy();
+        srWeaverDX11_ = nullptr;
+        ReleaseSRContextIfIdle();
+        return hr;
+    }
 
     *ppReturnedSRInterfaceDX11 = new SRInterfaceDX11();
 
@@ -561,7 +608,14 @@ HRESULT SimulatedReality::CreateSRInterfaceDX12(ID3D12Device* device, HWND windo
     StartRequestedTracking();
 
     // Must be done after Weaver creation, otherwise eye tracking is broken.
-    srContext_->initialize();
+    hr = InitializeSRContext();
+    if (FAILED(hr))
+    {
+        srWeaverDX12_->destroy();
+        srWeaverDX12_ = nullptr;
+        ReleaseSRContextIfIdle();
+        return hr;
+    }
 
     *ppReturnedSRInterfaceDX12 = new SRInterfaceDX12();
 
@@ -661,7 +715,14 @@ HRESULT SimulatedReality::CreateSRInterfaceOGL(HWND window, SRInterfaceOGL** ppR
     StartRequestedTracking();
 
     // Must be done after Weaver creation, otherwise eye tracking is broken.
-    srContext_->initialize();
+    hr = InitializeSRContext();
+    if (FAILED(hr))
+    {
+        srWeaverOGL_->destroy();
+        srWeaverOGL_ = nullptr;
+        ReleaseSRContextIfIdle();
+        return hr;
+    }
 
     *ppReturnedSRInterfaceOGL = new SRInterfaceOGL();
 

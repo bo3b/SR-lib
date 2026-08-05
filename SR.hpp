@@ -43,8 +43,11 @@
 // holds the head/eye trackers, so those two are only pulled in by consumers that
 // use them — but listing them unconditionally is harmless (/DELAYLOAD on a DLL
 // you don't import is a no-op warning, not an error).
-// CMake consumers get the whole list applied for them by srlib_apply_delayload()
-// — see CMakeLists.txt.
+// Don't hand-copy this list if you can avoid it — it grows as SR.cpp starts
+// using new SR components, and a consumer that misses one ships a module that
+// won't load without the runtime. CMake consumers get the whole list applied
+// for them by srlib_apply_delayload() — see CMakeLists.txt. MSBuild consumers
+// import SR-lib.props, which does the same thing for both platforms.
 // Leave opengl32.dll as a normal import (it always ships with Windows).
 // delayimp.lib is linked automatically once delay-loaded DLLs are specified.
 // Delay-load cannot be baked into a static lib, so it must live in the
