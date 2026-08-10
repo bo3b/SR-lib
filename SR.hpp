@@ -236,6 +236,20 @@ extern "C" HRESULT CreateSRInterfaceOGL(HWND window, SRInterfaceOGL** ppReturned
 // (it is released when the last interface is Delete()d; never delete it
 // yourself). All three return E_NOINTERFACE if no SRContext exists yet (call a
 // CreateSRInterface* first) or if the connected display has no switchable lens.
+//
+// These two are built to be driven straight from per-frame state ("am I weaving
+// this frame?"), so calling them every frame is fine and intended:
+//
+//   S_OK          the preference CHANGED and was sent to the service
+//   S_FALSE       already in that state; nothing was sent
+//   E_NOINTERFACE no context, or this display has no switchable lens (latched
+//                 after the first attempt, so it costs one failed create, not
+//                 one per frame)
+//   E_FAIL        the SDK threw
+//
+// Both S_OK and S_FALSE are SUCCEEDED(). Branch on `== S_OK` when you want to
+// log or react to the transition only — that is what the distinction is for,
+// and it saves you shadowing the state on your side just to detect a change.
 extern "C" HRESULT SREnableLensHint();
 extern "C" HRESULT SRDisableLensHint();
 

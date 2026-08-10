@@ -105,6 +105,10 @@ static SR::IGLWeaver1*   srWeaverOGL_  = nullptr;
 // Owned by srContext_ once created — we only null the pointer, never delete it.
 static SR::SwitchableLensHint* srLensHint_        = nullptr;
 static bool                    srLensHintTried_   = false;
+// The preference we last sent, so a per-frame caller doesn't re-send it. Resets
+// wherever srLensHint_ does: the hint dies with its context, and the service
+// drops our preference along with the session.
+static bool                    srLensHintEnabled_ = false;
 
 //-------------------------------------------------------------------------
 // Tracking
@@ -304,6 +308,7 @@ static void ReleaseSRContextIfIdle()
     // with it. Just drop our pointer and re-arm the lazy create.
     srLensHint_      = nullptr;
     srLensHintTried_ = false;
+    srLensHintEnabled_ = false;
 
     StopTracking();
 
@@ -789,15 +794,14 @@ static SR::SwitchableLensHint* GetLensHint()
     if (srLensHintTried_)
         return srLensHint_;
 
-    srLensHintTried_ = true;
-
     if (srContext_ == nullptr)
     {
-        // No context yet — leave the latch set so we don't retry per call, but
-        // allow a later CreateSRInterface* to reset it via ReleaseSRContextIfIdle.
-        srLensHintTried_ = false;
+        // No context yet — leave the latch clear so a call made before the
+        // first CreateSRInterface* can't wedge the hint permanently.
         return nullptr;
     }
+
+    srLensHintTried_ = true;
 
     try
     {
@@ -811,24 +815,54 @@ static SR::SwitchableLensHint* GetLensHint()
     return srLensHint_;
 }
 
-HRESULT SimulatedReality::SREnableLensHint()
+//  Consumers naturally drive the lens from per-frame state ("am I weaving right
+//  now?"), so these have to be cheap and safe to call every frame. Two things
+//  make them so, and both belong here rather than in each integration:
+//
+//   - Redundant calls never reach the SDK. srLensHintEnabled_ is OUR preference,
+//     which is exactly what the service arbitrates on, so re-sending an
+//     unchanged one buys nothing and puts an IPC round trip in the frame loop.
+//     The caller learns which happened from S_OK vs S_FALSE, so it can log the
+//     transition without keeping a shadow copy of the state.
+//   - A display with no switchable lens costs one failed create, not one per
+//     frame — GetLensHint latches that (srLensHintTried_) and returns nullptr
+//     from then on.
+static HRESULT SetLensHint(bool enable)
 {
+    if (srLensHintEnabled_ == enable)
+        return S_FALSE;
+
     SR::SwitchableLensHint* hint = GetLensHint();
     if (hint == nullptr)
         return E_NOINTERFACE;
 
-    hint->enable();
+    // The SDK documents std::system_error out of the neighbouring lens calls
+    // when their mutex lock fails, and this is an extern "C" HRESULT boundary —
+    // the same reason SetupSRContext catches around SRContext::create.
+    try
+    {
+        if (enable)
+            hint->enable();
+        else
+            hint->disable();
+    }
+    catch (...)
+    {
+        return E_FAIL;
+    }
+
+    srLensHintEnabled_ = enable;
     return S_OK;
+}
+
+HRESULT SimulatedReality::SREnableLensHint()
+{
+    return SetLensHint(true);
 }
 
 HRESULT SimulatedReality::SRDisableLensHint()
 {
-    SR::SwitchableLensHint* hint = GetLensHint();
-    if (hint == nullptr)
-        return E_NOINTERFACE;
-
-    hint->disable();
-    return S_OK;
+    return SetLensHint(false);
 }
 
 HRESULT SimulatedReality::SRIsLensHintEnabled(bool* enabled)
