@@ -22,7 +22,9 @@
 // NOTE (SDK 1.34.10): the weaver no longer owns the intermediate buffer.
 // You render into your own texture and pass it in via SetInputTexture();
 // Weave() writes into whatever render target is currently bound.
-// Anti-crosstalk (Dynamic ACT) is applied automatically by the weaver.
+// Anti-crosstalk is applied automatically by the weaver — but on high-contrast
+// game content it clips, and the fix belongs in your compose shader. See
+// "Ghost reduction" below before concluding that it is broken.
 //
 // DELAY-LOAD REQUIREMENT (important for whoever links this lib):
 // This is a static library, and the SR import libraries are merged into it,
@@ -96,6 +98,79 @@ namespace SimulatedReality
 //     the weaver is already computing it. If all you want is to drive a virtual
 //     stereo camera, prefer this over the tracking API further down. Returns
 //     false if no weaver exists yet.
+
+//-------------------------------------------------------------------------
+// Ghost reduction — do this in YOUR shader, not here
+//-------------------------------------------------------------------------
+// Every stereo display leaks some of each eye's image into the other, and how
+// visible that leak is depends on the brightness difference between the eyes.
+// SR panels additionally cancel crosstalk themselves, pre-subtracting a
+// fraction of the opposite view before the weave using factors measured for the
+// specific panel. The general model is
+//
+//     shown = own view + k * (opposite view)
+//
+// and cancellation inverts it, which drives values past the ends of the range
+// wherever |L - R| is large — a bright HUD or subtitles over a dark scene. Your
+// render target clamps them, and the clamped part is what survives as residual
+// ghosting. Desktop and photo content rarely reaches that; game content reaches
+// it constantly, which is the usual reason cancellation looks like it "isn't
+// working" in a game.
+//
+// Two standard range-compression levers relieve it, and both belong in your
+// compose shader rather than in this library. Every consumer that reaches
+// SetInputTexture just rendered that side-by-side texture with a shader, so
+// this is a couple of lines there — far cheaper than the extra full-screen pass
+// a wrapper would need, and it keeps this library free of shaders, intermediate
+// textures and pipeline-state save/restore. (The SDK does expose a contrast
+// control of its own, but only on the deprecated DX11Weaver / DX12Weaver
+// classes, not on the IDX*Weaver1 interfaces CreateSRInterface* returns, so
+// this wrapper cannot forward it in any case.)
+//
+//     // contrast: 1.0 = off.  lift: 0.0 = off.  See SPACE below.
+//     float3 GhostReduce(float3 c, float contrast, float lift) {
+//         float3 lin = pow(saturate(c), 2.2);
+//         lin = (lin - 0.5) * contrast + 0.5;   // squeeze toward mid-grey
+//         lin = lin * (1.0 - lift) + lift;      // raise the black floor
+//         return pow(saturate(lin), 1.0 / 2.2);
+//     }
+//
+// (GLSL is identical with vec3 / clamp(c, 0.0, 1.0).)
+//
+//   contrast  Shrinks |L - R| directly, and leaves (1 - contrast)/2 of headroom
+//             at each end of the range. Costs contrast across the whole image.
+//             Try 0.90 first; lower only if edges still ghost.
+//
+//   lift      Raises the black floor and leaves white alone. Cancellation clips
+//             at the BOTTOM — subtracting the opposite view drives dark pixels
+//             below zero — so lift targets that specifically, while contrast
+//             spends most of its effect squeezing highlights that were never the
+//             problem. The stereo literature calls the resulting margin
+//             "foot-room". Costs black level rather than contrast. Try 0.02 to
+//             0.05; blacks turn grey quickly above that.
+//
+// Which one wins is panel- and content-dependent, so expose both and let the
+// user pick. Note lift only helps where something actually cancels: on an
+// output path with no subtraction step there is no clipping to relieve, and
+// only contrast reduces visible ghosting.
+//
+// Do NOT try to apply either of these locally, to just the regions that ghost.
+// Ghosting IS inter-eye difference, so any correction applied to one eye and
+// not the other adds inter-eye difference and leaks in turn: a localized lift
+// leaves a grey patch that only helps once it covers everything, and dimming
+// the leak at its source carves a dark rim that then ghosts against bright
+// backgrounds. Both were tried and both failed for that reason. Keep it global.
+//
+// SPACE — this must run in whatever space the panel's cancellation runs in,
+// which your SetShaderSRGBConversion(read, ...) choice above decides:
+//   read == true   your input is linearised first, so cancellation runs in
+//                  linear light. Use the code as written: pivot 0.5 in linear,
+//                  via a plain pow(2.2) rather than the piecewise sRGB curve,
+//                  so the two stay consistent.
+//   read == false  it runs on your values as-is. Drop both pow() calls and
+//                  pivot around 0.5 in your own encoding.
+// A linear 0.5 pivot is bright (~0.73 sRGB-encoded), so lowering contrast lifts
+// blacks noticeably. That is expected, not a bug.
 
 //-------------------------------------------------------------------------
 class SRInterfaceDX9
