@@ -22,7 +22,10 @@
 // NOTE (SDK 1.34.10): the weaver no longer owns the intermediate buffer.
 // You render into your own texture and pass it in via SetInputTexture();
 // Weave() writes into whatever render target is currently bound.
-// Anti-crosstalk (Dynamic ACT) is applied automatically by the weaver.
+// Anti-crosstalk (Dynamic ACT) is applied automatically by the weaver — but
+// on high-contrast game content it clips, and the fix belongs in your compose
+// shader. See "Anti-crosstalk (ACT) headroom" below before concluding that
+// ACT is broken.
 //
 // DELAY-LOAD REQUIREMENT (important for whoever links this lib):
 // This is a static library, and the SR import libraries are merged into it,
@@ -96,6 +99,62 @@ namespace SimulatedReality
 //     the weaver is already computing it. If all you want is to drive a virtual
 //     stereo camera, prefer this over the tracking API further down. Returns
 //     false if no weaver exists yet.
+
+//-------------------------------------------------------------------------
+// Anti-crosstalk (ACT) headroom — do this in YOUR shader, not here
+//-------------------------------------------------------------------------
+// The weaver applies Dynamic ACT for you, using crosstalk factors measured for
+// the specific panel. It cancels optical crosstalk by pushing each view away
+// from the other before the weave:
+//
+//     L' = (L - k*R) / (1 - k)        equivalently  L' = L + g*(L - R),
+//     R' = (R - k*L) / (1 - k)                      with  g = k / (1 - k)
+//
+// where k is the panel's crosstalk factor (a per-panel static term plus a
+// dynamic term that grows as the viewer moves off-axis).
+//
+// The catch: L' overshoots [0,1] wherever |L - R| is large — a bright HUD or
+// subtitles over a dark scene — and your render target clamps it. That clamp
+// is precisely where residual ghosting survives, and it is the usual reason
+// ACT "isn't working" on game content. Desktop and photo content rarely hits
+// it; games hit it constantly.
+//
+// The SDK's own fix is setContrast(), which compresses both views toward
+// mid-grey before the push so it has room to land. That call exists only on
+// the deprecated DX11Weaver / DX12Weaver classes, NOT on the IDX*Weaver1
+// interfaces CreateSRInterface* returns, so this wrapper cannot forward it.
+//
+// You do not need it to. Every consumer that reaches SetInputTexture just
+// rendered that side-by-side texture with a shader, and this is two lines in
+// that shader — far cheaper than the extra full-screen pass the wrapper would
+// have to run, and it keeps this library free of shaders, intermediate
+// textures and pipeline-state save/restore. Add to your compose shader:
+//
+//     // contrast: 1.0 = off. Try 0.90 first; lower only if edges still ghost.
+//     float3 ACTHeadroom(float3 c, float contrast) {
+//         float3 lin = pow(saturate(c), 2.2);       // see SPACE note below
+//         lin = (lin - 0.5) * contrast + 0.5;
+//         return pow(saturate(lin), 1.0 / 2.2);
+//     }
+//
+// (GLSL is identical with vec3 / clamp(c, 0.0, 1.0).)
+//
+// This shrinks |L - R| by `contrast` and leaves (1 - contrast)/2 of headroom
+// at each rail, so it attacks the clipping from both sides at once. The cost
+// is real and global — less contrast, lifted blacks — so turn it down only
+// until the ghosting stops.
+//
+// SPACE — this must run in whatever space the weaver runs ACT in, which is
+// decided by your SetShaderSRGBConversion(read, ...) choice above:
+//   read == true   the weaver linearises your input first, so ACT runs in
+//                  linear light. Use the code as written: pivot 0.5 in linear,
+//                  via pow(2.2) — the weaver uses a plain 2.2 gamma, not the
+//                  piecewise sRGB curve, so match that rather than being more
+//                  "correct" than it.
+//   read == false  the weaver runs ACT on your values as-is. Drop both pow()
+//                  calls and pivot around 0.5 in your own encoding.
+// A linear 0.5 pivot is bright (~0.73 sRGB-encoded), so lowering contrast
+// lifts blacks noticeably. That is expected, not a bug.
 
 //-------------------------------------------------------------------------
 class SRInterfaceDX9
