@@ -923,6 +923,32 @@ bool WeaverGetPredictedEyes(SR::IWeaverBase1* weaver, float left[3], float right
     return true;
 }
 
+// The panel's defaults are read from the first weaver SetCrosstalk sees and
+// re-read whenever the weaver changes. The settings interface itself is asked
+// for again on every call, so a destroyed weaver never leaves it dangling.
+struct CrosstalkState
+{
+    const void*                           weaver = nullptr;
+    SimulatedReality::SRCrosstalkDefaults defaults;
+};
+
+template <typename Weaver>
+bool WeaverSetCrosstalk(Weaver* weaver, CrosstalkState& state, SimulatedReality::SRCrosstalkMode mode,
+                        float strength, float contrast)
+{
+    SR::IWeaverSettings1* settings = SimulatedReality::SRQueryWeaverSettings(weaver);
+    if (settings == nullptr)
+        return false;
+
+    if (state.weaver != weaver || !state.defaults.known)
+    {
+        if (!SimulatedReality::SRReadCrosstalkDefaults(settings, state.defaults))
+            return false;
+        state.weaver = weaver;
+    }
+    return SimulatedReality::SRApplyCrosstalk(settings, state.defaults, mode, strength, contrast);
+}
+
 }  // namespace
 
 #define SR_DEFINE_WEAVER_KNOBS(InterfaceName, weaverGlobal)                                        \
@@ -945,6 +971,11 @@ bool WeaverGetPredictedEyes(SR::IWeaverBase1* weaver, float left[3], float right
     bool InterfaceName::GetPredictedEyePositions(float left[3], float right[3])                    \
     {                                                                                              \
         return WeaverGetPredictedEyes(weaverGlobal, left, right);                                  \
+    }                                                                                              \
+    bool InterfaceName::SetCrosstalk(SRCrosstalkMode mode, float strength, float contrast)         \
+    {                                                                                              \
+        static CrosstalkState state;                                                               \
+        return WeaverSetCrosstalk(weaverGlobal, state, mode, strength, contrast);                  \
     }
 
 SR_DEFINE_WEAVER_KNOBS(SRInterfaceDX9,  srWeaverDX9_)

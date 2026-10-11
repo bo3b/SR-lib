@@ -24,7 +24,8 @@
 // Weave() writes into whatever render target is currently bound.
 // Anti-crosstalk is applied automatically by the weaver — but on high-contrast
 // game content it clips, and the fix belongs in your compose shader. See
-// "Ghost reduction" below before concluding that it is broken.
+// "Ghost reduction" below before concluding that it is broken, and
+// "Anti-crosstalk controls" for tuning the weaver's own correction.
 //
 // DELAY-LOAD REQUIREMENT (important for whoever links this lib):
 // This is a static library, and the SR import libraries are merged into it,
@@ -122,10 +123,10 @@ namespace SimulatedReality
 // SetInputTexture just rendered that side-by-side texture with a shader, so
 // this is a couple of lines there — far cheaper than the extra full-screen pass
 // a wrapper would need, and it keeps this library free of shaders, intermediate
-// textures and pipeline-state save/restore. (The SDK does expose a contrast
-// control of its own, but only on the deprecated DX11Weaver / DX12Weaver
-// classes, not on the IDX*Weaver1 interfaces CreateSRInterface* returns, so
-// this wrapper cannot forward it in any case.)
+// textures and pipeline-state save/restore. (The weaver's own correction can
+// be tuned as well — see "Anti-crosstalk controls" below. That changes how much
+// the panel cancels, not the clipping, so it complements these levers rather
+// than replacing them.)
 //
 //     // contrast: 1.0 = off.  lift: 0.0 = off.  See SPACE below.
 //     float3 GhostReduce(float3 c, float contrast, float lift) {
@@ -173,6 +174,36 @@ namespace SimulatedReality
 // blacks noticeably. That is expected, not a bug.
 
 //-------------------------------------------------------------------------
+// Anti-crosstalk controls — the weaver's own correction
+//-------------------------------------------------------------------------
+// The panel's cancellation has a mode and a strength, and the weaver a
+// "weaving contrast". None of them are on the IDX*Weaver1 interfaces, but the
+// SR runtime still implements them behind a weaver settings interface that any
+// weaver hands out through query<>() (declared at the bottom of this file).
+// Each SRInterface* forwards them as SetCrosstalk():
+//
+//   mode      Default keeps the panel's own choice (Dynamic on current panels:
+//             it follows your eye position). Off / Static / Dynamic override it.
+//   strength  A multiple of the panel's own measured factors, so 1.0 is the
+//             display as shipped. Above 1.0 cancels more, which removes more
+//             ghosting but clips more — pair it with "lift" above. Below 1.0
+//             cancels less and clips less.
+//   contrast  The weaver's weaving contrast, as a multiple of the panel's own.
+//             Lowering it squeezes the image much like the "contrast" lever
+//             above. Useful range is about 0.5 to 1.0; 0.97 is a good start.
+//
+// Settings belong to one weaver: a new weaver starts from the panel's defaults,
+// so apply them again after re-creating one. SetCrosstalk() returns false when
+// there is no weaver yet or the installed runtime does not offer the interface.
+enum class SRCrosstalkMode : int
+{
+    Default = -1,   // the panel's own mode
+    Off     = 0,
+    Static  = 1,
+    Dynamic = 2,
+};
+
+//-------------------------------------------------------------------------
 class SRInterfaceDX9
 {
 public:
@@ -187,6 +218,7 @@ public:
     void SetLatency(unsigned long long microseconds);
     void EnableLateLatching(bool enable);
     bool GetPredictedEyePositions(float left[3], float right[3]);
+    bool SetCrosstalk(SRCrosstalkMode mode, float strength, float contrast = 1.0f);
 };
 extern "C" HRESULT CreateSRInterfaceDX9(IDirect3DDevice9* device, HWND window, SRInterfaceDX9** ppReturnedSRInterfaceDX9);
 
@@ -205,6 +237,7 @@ public:
     void SetLatency(unsigned long long microseconds);
     void EnableLateLatching(bool enable);
     bool GetPredictedEyePositions(float left[3], float right[3]);
+    bool SetCrosstalk(SRCrosstalkMode mode, float strength, float contrast = 1.0f);
 };
 extern "C" HRESULT CreateSRInterfaceDX11(ID3D11DeviceContext* context, HWND window, SRInterfaceDX11** ppReturnedSRInterfaceDX11);
 
@@ -261,6 +294,7 @@ public:
     void SetLatency(unsigned long long microseconds);
     void EnableLateLatching(bool enable);
     bool GetPredictedEyePositions(float left[3], float right[3]);
+    bool SetCrosstalk(SRCrosstalkMode mode, float strength, float contrast = 1.0f);
 };
 extern "C" HRESULT CreateSRInterfaceDX12(ID3D12Device* device, HWND window, SRInterfaceDX12** ppReturnedSRInterfaceDX12);
 
@@ -286,6 +320,7 @@ public:
     void SetLatency(unsigned long long microseconds);
     void EnableLateLatching(bool enable);
     bool GetPredictedEyePositions(float left[3], float right[3]);
+    bool SetCrosstalk(SRCrosstalkMode mode, float strength, float contrast = 1.0f);
 };
 extern "C" HRESULT CreateSRInterfaceOGL(HWND window, SRInterfaceOGL** ppReturnedSRInterfaceOGL);
 
@@ -448,3 +483,107 @@ extern "C" HRESULT SRGetHeadPose(SRHeadPoseData* out);
 extern "C" HRESULT SRGetEyePair(SREyePairData* out);
 
 }  // namespace SimulatedReality
+
+//-------------------------------------------------------------------------
+// Anti-crosstalk controls on a raw SDK weaver
+//-------------------------------------------------------------------------
+// For code that creates its weaver with the SDK directly instead of through
+// CreateSRInterface*. Compiled only where the SR SDK headers are on the include
+// path, so wrapper-only consumers of this header never need them.
+#if defined(__has_include)
+#if __has_include("sr/weaver/WeaverTypes.h") && __has_include("sr/utility/commoninterfaces.h")
+
+#include "sr/utility/commoninterfaces.h"
+#include "sr/weaver/WeaverTypes.h"
+
+namespace SR
+{
+    // The runtime's weaver settings interface, as declared by the SDK's
+    // sr/weaver/IWeaverSettings.h — a header neither the 1.34.10 copy vendored
+    // here nor the 1.36.2 SDK ships. query<>() matches it in the runtime by type
+    // name (typeid), and calls go through the runtime's vtable, so the
+    // namespace, class name, base and method order must stay exactly as they
+    // are: reordering a method calls the wrong one.
+    class IWeaverSettings1 : virtual IQueryInterface
+    {
+    protected:
+        IWeaverSettings1() = default;
+        virtual ~IWeaverSettings1() = default;
+    public:
+        virtual void setContrast(float contrast) = 0;
+        virtual float getContrast() const = 0;
+        virtual void setACTMode(WeaverACTMode mode) = 0;
+        virtual WeaverACTMode getACTMode() const = 0;
+        virtual void setCrosstalkStaticFactor(float factor) = 0;
+        virtual float getCrosstalkStaticFactor() const = 0;
+        virtual void setCrosstalkDynamicFactor(float factor) = 0;
+        virtual float getCrosstalkDynamicFactor() const = 0;
+    };
+}
+
+namespace SimulatedReality
+{
+
+// The panel's own anti-crosstalk settings, read from a weaver before anything
+// has changed them. Strengths are scaled from these and Default restores them.
+struct SRCrosstalkDefaults
+{
+    bool  known         = false;
+    int   mode          = 2;
+    float staticFactor  = 0.0f;
+    float dynamicFactor = 0.0f;
+    float contrast      = 1.0f;
+};
+
+// The settings interface of any SDK weaver (IDX9/10/11/12Weaver1, IGLWeaver1),
+// or nullptr when the installed runtime does not offer it. Cheap; ask again
+// rather than keeping the pointer past the weaver's lifetime.
+template <typename Weaver>
+inline SR::IWeaverSettings1* SRQueryWeaverSettings(Weaver* weaver)
+{
+    if (weaver == nullptr)
+        return nullptr;
+    try { return weaver->template query<SR::IWeaverSettings1>(); }
+    catch (...) { return nullptr; }
+}
+
+// Read the panel's own settings. Call once per weaver, BEFORE SRApplyCrosstalk.
+inline bool SRReadCrosstalkDefaults(SR::IWeaverSettings1* settings, SRCrosstalkDefaults& out)
+{
+    if (settings == nullptr)
+        return false;
+    try
+    {
+        out.mode          = static_cast<int>(settings->getACTMode());
+        out.staticFactor  = settings->getCrosstalkStaticFactor();
+        out.dynamicFactor = settings->getCrosstalkDynamicFactor();
+        out.contrast      = settings->getContrast();
+        out.known         = true;
+        return true;
+    }
+    catch (...) { return false; }
+}
+
+// Apply mode / strength / contrast relative to the panel's defaults (see the
+// "Anti-crosstalk controls" notes above). (Default, 1.0, 1.0) restores them.
+inline bool SRApplyCrosstalk(SR::IWeaverSettings1* settings, const SRCrosstalkDefaults& defaults,
+                             SRCrosstalkMode mode, float strength, float contrast)
+{
+    if (settings == nullptr || !defaults.known)
+        return false;
+    try
+    {
+        const int m = (mode == SRCrosstalkMode::Default) ? defaults.mode : static_cast<int>(mode);
+        settings->setACTMode(static_cast<WeaverACTMode>(m));
+        settings->setCrosstalkStaticFactor(defaults.staticFactor * strength);
+        settings->setCrosstalkDynamicFactor(defaults.dynamicFactor * strength);
+        settings->setContrast(defaults.contrast * contrast);
+        return true;
+    }
+    catch (...) { return false; }
+}
+
+}  // namespace SimulatedReality
+
+#endif
+#endif

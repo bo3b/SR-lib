@@ -98,6 +98,8 @@ add_library(SRLib_SDK INTERFACE)
 add_library(SRLib::SDK ALIAS SRLib_SDK)
 
 target_include_directories(SRLib_SDK INTERFACE
+    # SR.hpp: its raw-SDK section (anti-crosstalk controls) serves SDK-only users too.
+    "${CMAKE_CURRENT_SOURCE_DIR}"
     "${SRLIB_SDKROOT}/include"
     "${SRLIB_SDKROOT}/third_party/asio/include"
     "${SRLIB_SDKROOT}/third_party/GLog/include"
